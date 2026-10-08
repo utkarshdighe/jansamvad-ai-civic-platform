@@ -272,11 +272,18 @@ export interface ChatMessageItemDto {
 }
 
 export async function apiSendMessage(message: string, conversationId?: number): Promise<ChatReplyDto> {
-  const res = await fetch(`${API_BASE}/api/chat/message`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ message, conversationId }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/chat/message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ message, conversationId }),
+    });
+  } catch {
+    throw new Error(
+      `Cannot reach backend at ${API_BASE}. The Spring Boot server is not running or VITE_API_URL is not set correctly.`
+    );
+  }
   return handleResponse<ChatReplyDto>(res);
 }
 
