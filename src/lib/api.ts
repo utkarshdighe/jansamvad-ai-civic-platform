@@ -241,3 +241,65 @@ export async function apiUpdateComplaintStatus(id: string, status: string, taskS
   });
   return handleResponse<ComplaintResponseDto>(res);
 }
+
+// ---- Chat API ----
+
+export interface ChatMessageDto {
+  message: string;
+  conversationId?: number;
+}
+
+export interface ChatReplyDto {
+  conversationId: number;
+  reply: string;
+}
+
+export interface ChatConversationDto {
+  id: number;
+  userId: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: ChatMessageItemDto[];
+}
+
+export interface ChatMessageItemDto {
+  id: number;
+  conversationId: number;
+  sender: string;
+  message: string;
+  createdAt: string;
+}
+
+export async function apiSendMessage(message: string, conversationId?: number): Promise<ChatReplyDto> {
+  const res = await fetch(`${API_BASE}/api/chat/message`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ message, conversationId }),
+  });
+  return handleResponse<ChatReplyDto>(res);
+}
+
+export async function apiGetConversations(): Promise<ChatConversationDto[]> {
+  const res = await fetch(`${API_BASE}/api/chat/conversations`, {
+    headers: { ...authHeaders() },
+  });
+  return handleResponse<ChatConversationDto[]>(res);
+}
+
+export async function apiGetConversationMessages(id: number): Promise<ChatConversationDto> {
+  const res = await fetch(`${API_BASE}/api/chat/conversations/${id}/messages`, {
+    headers: { ...authHeaders() },
+  });
+  return handleResponse<ChatConversationDto>(res);
+}
+
+export async function apiDeleteConversation(id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/chat/conversations/${id}`, {
+    method: 'DELETE',
+    headers: { ...authHeaders() },
+  });
+  if (!res.ok && res.status !== 204) {
+    throw new Error(`Failed to delete conversation (${res.status})`);
+  }
+}

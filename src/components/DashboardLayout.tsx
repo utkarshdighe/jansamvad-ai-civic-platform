@@ -4,6 +4,7 @@ import { Bell, LogOut, Menu, X, Building2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { timeAgo } from '@/lib/utils';
 import type { Role } from '@/lib/types';
+import AIChatbot from './AIChatbot';
 
 export interface NavItem {
   id: string;
@@ -177,6 +178,8 @@ export default function DashboardLayout({
 
         <main className="flex-1 p-4 lg:p-6 overflow-y-auto">{children}</main>
       </div>
+
+      <AIChatbot />
     </div>
   );
 }
