@@ -6,5 +6,6 @@ import java.util.List;
 
 public interface CampaignRepository extends JpaRepository<CampaignEntity, Long> {
     List<CampaignEntity> findByInfluencerIdOrderByCreatedAtDesc(Long influencerId);
+    List<CampaignEntity> findAllByOrderByCreatedAtDesc();
     boolean existsByReferralCode(String referralCode);
 }

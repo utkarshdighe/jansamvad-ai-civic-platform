@@ -10,9 +10,15 @@ public interface ComplaintRepository extends JpaRepository<ComplaintEntity, Long
     List<ComplaintEntity> findAllByOrderByCreatedAtDesc();
     List<ComplaintEntity> findByAssignedWorkerIdOrderByCreatedAtDesc(Long workerId);
     List<ComplaintEntity> findByStatus(ComplaintEntity.Status status);
+    List<ComplaintEntity> findByDepartmentOrderByCreatedAtDesc(String department);
+    List<ComplaintEntity> findByPriority(ComplaintEntity.Priority priority);
 
     @Query("SELECT c FROM ComplaintEntity c WHERE c.status = com.jansamvad.entity.ComplaintEntity.Status.ASSIGNED OR c.status = com.jansamvad.entity.ComplaintEntity.Status.IN_PROGRESS")
     List<ComplaintEntity> findActiveTasks();
 
     long countByStatus(ComplaintEntity.Status status);
+    long countByPriority(ComplaintEntity.Priority priority);
+    long countByCitizenId(Long citizenId);
+    long countByAssignedWorkerId(Long workerId);
+    long countByDepartment(String department);
 }

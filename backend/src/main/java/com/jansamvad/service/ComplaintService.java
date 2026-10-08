@@ -312,6 +312,14 @@ public class ComplaintService {
         complaint.getTimeline().add(event);
     }
 
+    public void addTimelineEventPublic(ComplaintEntity complaint, String status, String actor, String note) {
+        addTimelineEvent(complaint, status, actor, note);
+    }
+
+    public ComplaintResponse toResponsePublic(ComplaintEntity c) {
+        return toResponse(c);
+    }
+
     private ComplaintResponse toResponse(ComplaintEntity c) {
         ComplaintResponse resp = new ComplaintResponse();
         resp.setId(c.getId());
