@@ -1,12 +1,9 @@
 package com.jansamvad.service;
 
-import com.jansamvad.dto.ComplaintRequest;
-import com.jansamvad.dto.ComplaintResponse;
-import com.jansamvad.entity.ComplaintEntity;
-import com.jansamvad.entity.TimelineEventEntity;
-import com.jansamvad.entity.UserEntity;
-import com.jansamvad.repository.ComplaintRepository;
-import com.jansamvad.repository.UserRepository;
+import com.jansamvad.dto.*;
+import com.jansamvad.entity.*;
+import com.jansamvad.repository.*;
+import com.jansamvad.security.SecurityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +17,23 @@ public class ComplaintService {
 
     private final ComplaintRepository complaintRepository;
     private final UserRepository userRepository;
+    private final FieldWorkerRepository fieldWorkerRepository;
+    private final NotificationService notificationService;
+    private final RewardService rewardService;
+    private final SecurityUtils securityUtils;
 
-    public ComplaintService(ComplaintRepository complaintRepository, UserRepository userRepository) {
+    public ComplaintService(ComplaintRepository complaintRepository,
+                            UserRepository userRepository,
+                            FieldWorkerRepository fieldWorkerRepository,
+                            NotificationService notificationService,
+                            RewardService rewardService,
+                            SecurityUtils securityUtils) {
         this.complaintRepository = complaintRepository;
         this.userRepository = userRepository;
+        this.fieldWorkerRepository = fieldWorkerRepository;
+        this.notificationService = notificationService;
+        this.rewardService = rewardService;
+        this.securityUtils = securityUtils;
     }
 
     public ComplaintResponse createComplaint(ComplaintRequest request, Long userId) {
@@ -57,13 +67,196 @@ public class ComplaintService {
         if (request.getAiSuggestedAction() != null) complaint.setAiSuggestedAction(request.getAiSuggestedAction());
 
         ComplaintEntity saved = complaintRepository.save(complaint);
+
+        addTimelineEvent(saved, "REGISTERED", user.getFullName() + " (" + user.getRole().name() + ")",
+                "Complaint submitted by citizen");
+
+        // Reward for submission
+        rewardService.addReward(user.getId(), 50, "Complaint submitted: " + complaint.getComplaintNumber(), saved.getId());
+
+        // Notify citizen
+        notificationService.createNotification(user.getId(), UserEntity.Role.CITIZEN,
+                "Complaint Registered", "Your complaint " + complaint.getComplaintNumber() + " has been registered.",
+                NotificationEntity.NotificationType.SUCCESS);
+
         return toResponse(saved);
     }
 
-    public ComplaintResponse getComplaintById(Long id) {
+    public ComplaintResponse verifyComplaint(Long id, VerifyRequest request) {
+        UserEntity actor = securityUtils.getCurrentUser();
         ComplaintEntity complaint = complaintRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Complaint not found with id: " + id));
-        return toResponse(complaint);
+
+        complaint.setCategory(request.getCategory());
+        complaint.setDepartment(request.getDepartment());
+        complaint.setPriority(parsePriority(request.getPriority(), complaint.getPriority()));
+        complaint.setStatus(ComplaintEntity.Status.VERIFIED);
+
+        addTimelineEvent(complaint, "VERIFIED", actor.getFullName() + " (MUNICIPAL_AUTHORITY)",
+                "Complaint verified, category/department/priority updated");
+
+        // Reward for verification (to citizen)
+        rewardService.addReward(complaint.getCitizenId(), 10, "Complaint verified: " + complaint.getComplaintNumber(), complaint.getId());
+
+        // Notify citizen
+        notificationService.createNotification(complaint.getCitizenId(), UserEntity.Role.CITIZEN,
+                "Complaint Verified", "Your complaint " + complaint.getComplaintNumber() + " has been verified and forwarded.",
+                NotificationEntity.NotificationType.SUCCESS);
+
+        return toResponse(complaintRepository.save(complaint));
+    }
+
+    public ComplaintResponse rejectComplaint(Long id, RejectRequest request) {
+        UserEntity actor = securityUtils.getCurrentUser();
+        ComplaintEntity complaint = complaintRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Complaint not found with id: " + id));
+
+        complaint.setStatus(ComplaintEntity.Status.REJECTED);
+
+        addTimelineEvent(complaint, "REJECTED", actor.getFullName() + " (MUNICIPAL_AUTHORITY)",
+                request.getReason());
+
+        // Notify citizen
+        notificationService.createNotification(complaint.getCitizenId(), UserEntity.Role.CITIZEN,
+                "Complaint Rejected", "Your complaint " + complaint.getComplaintNumber() + " was rejected: " + request.getReason(),
+                NotificationEntity.NotificationType.WARNING);
+
+        return toResponse(complaintRepository.save(complaint));
+    }
+
+    public ComplaintResponse changePriority(Long id, PriorityRequest request) {
+        UserEntity actor = securityUtils.getCurrentUser();
+        ComplaintEntity complaint = complaintRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Complaint not found with id: " + id));
+
+        ComplaintEntity.Priority newPriority = parsePriority(request.getPriority(), complaint.getPriority());
+        ComplaintEntity.Priority oldPriority = complaint.getPriority();
+        complaint.setPriority(newPriority);
+
+        addTimelineEvent(complaint, "PRIORITY_CHANGED", actor.getFullName() + " (MUNICIPAL_AUTHORITY)",
+                "Priority changed from " + oldPriority + " to " + newPriority);
+
+        // Notify citizen
+        notificationService.createNotification(complaint.getCitizenId(), UserEntity.Role.CITIZEN,
+                "Priority Updated", "Your complaint " + complaint.getComplaintNumber() + " priority changed to " + newPriority,
+                NotificationEntity.NotificationType.INFO);
+
+        return toResponse(complaintRepository.save(complaint));
+    }
+
+    public ComplaintResponse assignWorkforce(Long id, AssignRequest request) {
+        UserEntity actor = securityUtils.getCurrentUser();
+        ComplaintEntity complaint = complaintRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Complaint not found with id: " + id));
+
+        FieldWorkerEntity worker = fieldWorkerRepository.findById(request.getWorkerId())
+                .orElseThrow(() -> new IllegalArgumentException("Field worker not found with id: " + request.getWorkerId()));
+
+        complaint.setAssignedWorkerId(worker.getId());
+        complaint.setAssignedWorkerName(worker.getName());
+        complaint.setStatus(ComplaintEntity.Status.ASSIGNED);
+        complaint.setTaskStatus(ComplaintEntity.TaskStatus.ASSIGNED);
+
+        addTimelineEvent(complaint, "ASSIGNED", actor.getFullName() + " (MUNICIPAL_AUTHORITY)",
+                "Assigned to " + worker.getName() + " (" + worker.getDepartment() + ")");
+
+        // Notify workforce user
+        if (worker.getUserId() != null) {
+            notificationService.createNotification(worker.getUserId(), UserEntity.Role.FIELD_WORKFORCE,
+                    "New Task Assigned", "Complaint " + complaint.getComplaintNumber() + " has been assigned to you.",
+                    NotificationEntity.NotificationType.INFO);
+        }
+
+        // Notify citizen
+        notificationService.createNotification(complaint.getCitizenId(), UserEntity.Role.CITIZEN,
+                "Workforce Assigned", "Your complaint " + complaint.getComplaintNumber() + " has been assigned to " + worker.getName() + ".",
+                NotificationEntity.NotificationType.INFO);
+
+        return toResponse(complaintRepository.save(complaint));
+    }
+
+    public ComplaintResponse updateTaskStatus(Long id, TaskStatusRequest request) {
+        UserEntity actor = securityUtils.getCurrentUser();
+        ComplaintEntity complaint = complaintRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Complaint not found with id: " + id));
+
+        // Only assigned workforce or authority can update task status
+        boolean isAssignedWorker = complaint.getAssignedWorkerId() != null
+                && actor.getId().equals(complaint.getAssignedWorkerId());
+        boolean isAuthority = actor.getRole() == UserEntity.Role.MUNICIPAL_AUTHORITY;
+        if (!isAssignedWorker && !isAuthority) {
+            throw new IllegalArgumentException("You are not authorized to update this task");
+        }
+
+        ComplaintEntity.TaskStatus newTaskStatus = ComplaintEntity.TaskStatus.valueOf(request.getTaskStatus().toUpperCase());
+        complaint.setTaskStatus(newTaskStatus);
+
+        String statusLabel;
+        if (newTaskStatus == ComplaintEntity.TaskStatus.IN_PROGRESS) {
+            complaint.setStatus(ComplaintEntity.Status.IN_PROGRESS);
+            statusLabel = "Task started";
+        } else if (newTaskStatus == ComplaintEntity.TaskStatus.WORK_COMPLETED) {
+            statusLabel = "Work completed";
+        } else if (newTaskStatus == ComplaintEntity.TaskStatus.ACCEPTED) {
+            statusLabel = "Task accepted";
+        } else {
+            statusLabel = "Task status: " + newTaskStatus;
+        }
+
+        addTimelineEvent(complaint, newTaskStatus.name(), actor.getFullName() + " (" + actor.getRole().name() + ")", statusLabel);
+
+        // Notify citizen of progress
+        notificationService.createNotification(complaint.getCitizenId(), UserEntity.Role.CITIZEN,
+                "Complaint Update", "Your complaint " + complaint.getComplaintNumber() + ": " + statusLabel,
+                NotificationEntity.NotificationType.INFO);
+
+        return toResponse(complaintRepository.save(complaint));
+    }
+
+    public ComplaintResponse resolveComplaint(Long id, ResolveRequest request) {
+        UserEntity actor = securityUtils.getCurrentUser();
+        ComplaintEntity complaint = complaintRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Complaint not found with id: " + id));
+
+        // Only assigned workforce or authority can resolve
+        boolean isAssignedWorker = complaint.getAssignedWorkerId() != null
+                && actor.getId().equals(complaint.getAssignedWorkerId());
+        boolean isAuthority = actor.getRole() == UserEntity.Role.MUNICIPAL_AUTHORITY;
+        if (!isAssignedWorker && !isAuthority) {
+            throw new IllegalArgumentException("You are not authorized to resolve this complaint");
+        }
+
+        complaint.setStatus(ComplaintEntity.Status.RESOLVED);
+        complaint.setTaskStatus(ComplaintEntity.TaskStatus.RESOLVED);
+        complaint.setResolutionNote(request.getResolutionNote());
+        complaint.setResolvedAt(Instant.now());
+        if (request.getAfterPhotoUrl() != null) {
+            complaint.setAfterPhotoUrl(request.getAfterPhotoUrl());
+        }
+
+        addTimelineEvent(complaint, "RESOLVED", actor.getFullName() + " (" + actor.getRole().name() + ")",
+                request.getResolutionNote());
+
+        // Reward for resolution (to citizen)
+        rewardService.addReward(complaint.getCitizenId(), 20, "Complaint resolved: " + complaint.getComplaintNumber(), complaint.getId());
+
+        // Notify citizen
+        notificationService.createNotification(complaint.getCitizenId(), UserEntity.Role.CITIZEN,
+                "Complaint Resolved", "Your complaint " + complaint.getComplaintNumber() + " has been resolved.",
+                NotificationEntity.NotificationType.SUCCESS);
+
+        // Notify authority
+        notificationService.createNotification(0L, UserEntity.Role.MUNICIPAL_AUTHORITY,
+                "Complaint Resolved", "Complaint " + complaint.getComplaintNumber() + " resolved by " + actor.getFullName() + ".",
+                NotificationEntity.NotificationType.SUCCESS);
+
+        return toResponse(complaintRepository.save(complaint));
+    }
+
+    public ComplaintResponse getComplaintById(Long id) {
+        return complaintRepository.findById(id)
+                .map(this::toResponse)
+                .orElseThrow(() -> new IllegalArgumentException("Complaint not found with id: " + id));
     }
 
     public List<ComplaintResponse> getComplaintsByUser(Long userId) {
@@ -73,7 +266,23 @@ public class ComplaintService {
                 .collect(Collectors.toList());
     }
 
+    public List<ComplaintResponse> getComplaintsByWorker(Long workerId) {
+        return complaintRepository.findByAssignedWorkerIdOrderByCreatedAtDesc(workerId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<ComplaintResponse> getAllComplaints() {
+        return complaintRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Legacy status update for backward compatibility
     public ComplaintResponse updateStatus(Long id, String status, String taskStatus, String note) {
+        UserEntity actor = securityUtils.getCurrentUser();
         ComplaintEntity complaint = complaintRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Complaint not found with id: " + id));
 
@@ -82,29 +291,25 @@ public class ComplaintService {
             complaint.setTaskStatus(ComplaintEntity.TaskStatus.valueOf(taskStatus.toUpperCase()));
         }
 
-        TimelineEventEntity event = new TimelineEventEntity();
-        event.setComplaint(complaint);
-        event.setStatus(status);
-        event.setActor("System");
-        event.setTimestamp(Instant.now());
-        if (note != null && !note.isBlank()) {
-            event.setNote(note);
-        }
-        complaint.getTimeline().add(event);
+        addTimelineEvent(complaint, status, actor.getFullName() + " (" + actor.getRole().name() + ")", note);
 
         if ("RESOLVED".equalsIgnoreCase(status)) {
             complaint.setResolvedAt(Instant.now());
         }
 
-        ComplaintEntity saved = complaintRepository.save(complaint);
-        return toResponse(saved);
+        return toResponse(complaintRepository.save(complaint));
     }
 
-    public List<ComplaintResponse> getAllComplaints() {
-        return complaintRepository.findAllByOrderByCreatedAtDesc()
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    void addTimelineEvent(ComplaintEntity complaint, String status, String actor, String note) {
+        TimelineEventEntity event = new TimelineEventEntity();
+        event.setComplaint(complaint);
+        event.setStatus(status);
+        event.setActor(actor);
+        event.setTimestamp(Instant.now());
+        if (note != null && !note.isBlank()) {
+            event.setNote(note);
+        }
+        complaint.getTimeline().add(event);
     }
 
     private ComplaintResponse toResponse(ComplaintEntity c) {

@@ -37,21 +37,13 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setMobileNumber(request.getMobileNumber());
+        // Public signup is always CITIZEN — no privilege escalation
         user.setRole(UserEntity.Role.CITIZEN);
         user.setWard(request.getWard());
 
         UserEntity saved = userRepository.save(user);
         String token = jwtService.generateToken(saved.getId(), saved.getEmail(), saved.getRole().name());
-        return new AuthResponse(
-                token,
-                String.valueOf(saved.getId()),
-                saved.getFullName(),
-                saved.getEmail(),
-                saved.getRole().name(),
-                saved.getWard(),
-                saved.getDepartment(),
-                saved.getMobileNumber()
-        );
+        return toAuthResponse(saved, token);
     }
 
     public AuthResponse signIn(String email, String password) {
@@ -61,6 +53,16 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid email or password");
         }
         String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole().name());
+        return toAuthResponse(user, token);
+    }
+
+    public UserResponse getCurrentUser(String email) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return toUserResponse(user);
+    }
+
+    private AuthResponse toAuthResponse(UserEntity user, String token) {
         return new AuthResponse(
                 token,
                 String.valueOf(user.getId()),
@@ -73,9 +75,7 @@ public class AuthService {
         );
     }
 
-    public UserResponse getCurrentUser(String email) {
-        UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    private UserResponse toUserResponse(UserEntity user) {
         return new UserResponse(
                 user.getId(),
                 user.getFullName(),
