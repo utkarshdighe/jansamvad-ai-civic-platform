@@ -103,6 +103,7 @@ const translations: Record<Lang, Dict> = {
 
     // Dashboard layout
     'layout.logout': 'Logout',
+    'layout.switchRole': 'Switch Role',
     'layout.notifications': 'Notifications',
     'layout.markAllRead': 'Mark all read',
     'layout.markAllAsRead': 'Mark all as read',
@@ -491,6 +492,7 @@ const translations: Record<Lang, Dict> = {
 
     // Dashboard layout
     'layout.logout': 'बाहेर पडा',
+    'layout.switchRole': 'भूमिका बदला',
     'layout.notifications': 'सूचना',
     'layout.markAllRead': 'सर्व वाचले',
     'layout.markAllAsRead': 'सर्व वाचलेले चिन्हांकित करा',
@@ -879,6 +881,7 @@ const translations: Record<Lang, Dict> = {
 
     // Dashboard layout
     'layout.logout': 'लॉगआउट',
+    'layout.switchRole': 'भूमिका बदलें',
     'layout.notifications': 'सूचनाएं',
     'layout.markAllRead': 'सभी पढ़ें',
     'layout.markAllAsRead': 'सभी पढ़ा हुआ चिह्नित करें',

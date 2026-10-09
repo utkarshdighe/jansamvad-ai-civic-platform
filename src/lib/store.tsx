@@ -21,6 +21,7 @@ interface StoreContextValue extends AppState {
   login: (user: User) => void;
   logout: () => void;
   selectRole: (role: Role) => void;
+  switchRole: () => void;
   signUp: (name: string, email: string, password: string, role: Role, phone: string) => Promise<{ ok: true; account?: Account } | { ok: false; error: string }>;
   signIn: (email: string, password: string) => Promise<{ ok: true; user: User } | { ok: false; error: string }>;
   addComplaint: (c: Omit<Complaint, 'id' | 'status' | 'timeline' | 'createdAt' | 'rewardPoints'>) => Promise<Complaint>;
@@ -185,11 +186,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const selectRole = useCallback((role: Role) => {
     setPendingUser((pending) => {
       if (!pending) return pending;
+      if (role !== pending.role) return pending;
       const user: User = { ...pending, role };
       saveSession(user);
       clearPendingUser();
       setState((s) => ({ ...s, currentUser: user }));
       return null;
+    });
+  }, []);
+
+  const switchRole = useCallback(() => {
+    setState((s) => {
+      if (!s.currentUser) return s;
+      const pending: User = { ...s.currentUser };
+      savePendingUser(pending);
+      clearSession();
+      setPendingUser(pending);
+      return { ...s, currentUser: null };
     });
   }, []);
 
@@ -544,6 +557,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     selectRole,
+    switchRole,
     signUp,
     signIn,
     addComplaint,

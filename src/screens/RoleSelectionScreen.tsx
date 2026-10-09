@@ -1,4 +1,4 @@
-import { User, Shield, HardHat, Megaphone, Building2, ArrowRight } from 'lucide-react';
+import { User, Shield, HardHat, Megaphone, Building2, ArrowRight, Lock } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useI18n } from '@/lib/i18n';
 import type { Role } from '@/lib/types';
@@ -15,6 +15,7 @@ export default function RoleSelectionScreen() {
     gradient: string;
     iconBg: string;
     ring: string;
+    allowed: boolean;
   }[] = [
     {
       role: 'citizen',
@@ -24,6 +25,7 @@ export default function RoleSelectionScreen() {
       gradient: 'from-blue-600 to-blue-700',
       iconBg: 'bg-blue-50 text-blue-600',
       ring: 'hover:ring-blue-400',
+      allowed: pendingUser?.role === 'citizen',
     },
     {
       role: 'authority',
@@ -33,6 +35,7 @@ export default function RoleSelectionScreen() {
       gradient: 'from-teal-600 to-teal-700',
       iconBg: 'bg-teal-50 text-teal-600',
       ring: 'hover:ring-teal-400',
+      allowed: pendingUser?.role === 'authority',
     },
     {
       role: 'workforce',
@@ -42,6 +45,7 @@ export default function RoleSelectionScreen() {
       gradient: 'from-orange-500 to-orange-600',
       iconBg: 'bg-orange-50 text-orange-600',
       ring: 'hover:ring-orange-400',
+      allowed: pendingUser?.role === 'workforce',
     },
     {
       role: 'influencer',
@@ -51,6 +55,7 @@ export default function RoleSelectionScreen() {
       gradient: 'from-fuchsia-600 to-fuchsia-700',
       iconBg: 'bg-fuchsia-50 text-fuchsia-600',
       ring: 'hover:ring-fuchsia-400',
+      allowed: pendingUser?.role === 'influencer',
     },
   ];
 
@@ -86,8 +91,11 @@ export default function RoleSelectionScreen() {
             return (
               <button
                 key={card.role}
-                onClick={() => selectRole(card.role)}
-                className={`group text-left p-6 bg-white rounded-2xl border border-gray-200 shadow-sm ring-2 ring-transparent transition-all hover:shadow-md ${card.ring}`}
+                onClick={() => card.allowed && selectRole(card.role)}
+                disabled={!card.allowed}
+                className={`group text-left p-6 bg-white rounded-2xl border border-gray-200 shadow-sm ring-2 ring-transparent transition-all ${
+                  card.allowed ? `hover:shadow-md ${card.ring} cursor-pointer` : 'opacity-40 cursor-not-allowed'
+                }`}
               >
                 <div className="flex items-start gap-4">
                   <div className={`p-3 rounded-xl ${card.iconBg} shrink-0`}>
@@ -96,7 +104,11 @@ export default function RoleSelectionScreen() {
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <h3 className="text-base font-bold text-gray-900">{card.title}</h3>
-                      <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                      {card.allowed ? (
+                        <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                      ) : (
+                        <Lock className="w-4 h-4 text-gray-300" />
+                      )}
                     </div>
                     <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{card.description}</p>
                   </div>
