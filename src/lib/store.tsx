@@ -18,6 +18,7 @@ const STORAGE_KEY = 'jansamvad_state_v1';
 
 interface StoreContextValue extends AppState {
   pendingUser: User | null;
+  isDemoMode: boolean;
   login: (user: User) => void;
   logout: () => void;
   selectRole: (role: Role) => void;
@@ -186,7 +187,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const selectRole = useCallback((role: Role) => {
     setPendingUser((pending) => {
       if (!pending) return pending;
-      if (role !== pending.role) return pending;
+      const demo = !getToken();
+      if (!demo && role !== pending.role) return pending;
       const user: User = { ...pending, role };
       saveSession(user);
       clearPendingUser();
@@ -551,6 +553,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const value: StoreContextValue = {
     ...state,
     pendingUser,
+    isDemoMode: !getToken(),
     toasts,
     toast,
     dismissToast,

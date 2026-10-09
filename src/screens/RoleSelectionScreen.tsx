@@ -4,7 +4,7 @@ import { useI18n } from '@/lib/i18n';
 import type { Role } from '@/lib/types';
 
 export default function RoleSelectionScreen() {
-  const { pendingUser, selectRole, logout } = useStore();
+  const { pendingUser, selectRole, logout, isDemoMode } = useStore();
   const { t } = useI18n();
 
   const roleCards: {
@@ -25,7 +25,7 @@ export default function RoleSelectionScreen() {
       gradient: 'from-blue-600 to-blue-700',
       iconBg: 'bg-blue-50 text-blue-600',
       ring: 'hover:ring-blue-400',
-      allowed: pendingUser?.role === 'citizen',
+      allowed: isDemoMode || pendingUser?.role === 'citizen',
     },
     {
       role: 'authority',
@@ -35,7 +35,7 @@ export default function RoleSelectionScreen() {
       gradient: 'from-teal-600 to-teal-700',
       iconBg: 'bg-teal-50 text-teal-600',
       ring: 'hover:ring-teal-400',
-      allowed: pendingUser?.role === 'authority',
+      allowed: isDemoMode || pendingUser?.role === 'authority',
     },
     {
       role: 'workforce',
@@ -45,7 +45,7 @@ export default function RoleSelectionScreen() {
       gradient: 'from-orange-500 to-orange-600',
       iconBg: 'bg-orange-50 text-orange-600',
       ring: 'hover:ring-orange-400',
-      allowed: pendingUser?.role === 'workforce',
+      allowed: isDemoMode || pendingUser?.role === 'workforce',
     },
     {
       role: 'influencer',
@@ -55,7 +55,7 @@ export default function RoleSelectionScreen() {
       gradient: 'from-fuchsia-600 to-fuchsia-700',
       iconBg: 'bg-fuchsia-50 text-fuchsia-600',
       ring: 'hover:ring-fuchsia-400',
-      allowed: pendingUser?.role === 'influencer',
+      allowed: isDemoMode || pendingUser?.role === 'influencer',
     },
   ];
 
