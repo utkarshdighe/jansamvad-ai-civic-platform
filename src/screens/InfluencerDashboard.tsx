@@ -8,31 +8,37 @@ import StatCard from '@/components/ui/StatCard';
 import Modal from '@/components/ui/Modal';
 import BarChart from '@/components/ui/Charts';
 import { useStore } from '@/lib/store';
+import { useI18n } from '@/lib/i18n';
 import { formatDate } from '@/lib/utils';
 import type { Campaign } from '@/lib/types';
 
 const CIVIC_ISSUES = ['Waste Management', 'Road Damage', 'Street Lighting', 'Water Supply', 'Sanitation', 'Tree & Garden', 'Encroachment'];
 const AREAS = ['Akurdi', 'Nigdi', 'Pimpri', 'Wakad', 'Chinchwad', 'Bhosari', 'Hinjewadi'];
 
-const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-  { id: 'campaigns', label: 'Campaigns', icon: <Megaphone className="w-4 h-4" /> },
-  { id: 'create', label: 'Create Campaign', icon: <PlusCircle className="w-4 h-4" /> },
-  { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-4 h-4" /> },
-  { id: 'referrals', label: 'Referrals', icon: <Gift className="w-4 h-4" /> },
-  { id: 'profile', label: 'Profile', icon: <UserIcon className="w-4 h-4" /> },
-];
+function useInfluencerNavItems(): NavItem[] {
+  const { t } = useI18n();
+  return [
+    { id: 'dashboard', label: t('nav.dashboard'), icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'campaigns', label: t('nav.campaigns'), icon: <Megaphone className="w-4 h-4" /> },
+    { id: 'create', label: t('nav.createCampaign'), icon: <PlusCircle className="w-4 h-4" /> },
+    { id: 'analytics', label: t('nav.analytics'), icon: <BarChart3 className="w-4 h-4" /> },
+    { id: 'referrals', label: t('nav.referrals'), icon: <Gift className="w-4 h-4" /> },
+    { id: 'profile', label: t('nav.profile'), icon: <UserIcon className="w-4 h-4" /> },
+  ];
+}
 
 export default function InfluencerDashboard() {
   const [activeNav, setActiveNav] = useState('dashboard');
+  const { t } = useI18n();
+  const navItems = useInfluencerNavItems();
   const titles: Record<string, string> = {
-    dashboard: 'Dashboard', campaigns: 'Campaigns', create: 'Create Campaign',
-    analytics: 'Analytics', referrals: 'Referrals', profile: 'Profile',
+    dashboard: t('nav.dashboard'), campaigns: t('nav.campaigns'), create: t('nav.createCampaign'),
+    analytics: t('nav.analytics'), referrals: t('nav.referrals'), profile: t('nav.profile'),
   };
 
   return (
     <DashboardLayout navItems={navItems} activeNav={activeNav} onNavChange={setActiveNav}
-      title={titles[activeNav]} subtitle="Civic Awareness & Campaigns" role="influencer">
+      title={titles[activeNav]} subtitle={t('layout.civicAwareness')} role="influencer">
       {activeNav === 'dashboard' && <Overview onNavChange={setActiveNav} />}
       {activeNav === 'campaigns' && <CampaignsView />}
       {activeNav === 'create' && <CreateCampaign onNavChange={setActiveNav} />}
@@ -44,6 +50,7 @@ export default function InfluencerDashboard() {
 }
 
 function Overview({ onNavChange }: { onNavChange: (id: string) => void }) {
+  const { t } = useI18n();
   const { campaigns, currentUser } = useStore();
   const myCampaigns = campaigns.filter((c) => c.influencerId === currentUser?.id);
   const totalReach = myCampaigns.reduce((s, c) => s + c.reach, 0);
@@ -54,25 +61,25 @@ function Overview({ onNavChange }: { onNavChange: (id: string) => void }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Campaigns" value={myCampaigns.length} icon={<Megaphone className="w-5 h-5" />} color="fuchsia" />
-        <StatCard label="People Reached" value={totalReach.toLocaleString()} icon={<Users className="w-5 h-5" />} color="blue" />
-        <StatCard label="New Citizens" value={totalNew} icon={<UserIcon className="w-5 h-5" />} color="emerald" />
-        <StatCard label="Complaints Generated" value={totalComplaints} icon={<TrendingUp className="w-5 h-5" />} color="amber" />
+        <StatCard label={t('inf.campaigns')} value={myCampaigns.length} icon={<Megaphone className="w-5 h-5" />} color="fuchsia" />
+        <StatCard label={t('inf.peopleReached')} value={totalReach.toLocaleString()} icon={<Users className="w-5 h-5" />} color="blue" />
+        <StatCard label={t('inf.newCitizens')} value={totalNew} icon={<UserIcon className="w-5 h-5" />} color="emerald" />
+        <StatCard label={t('inf.complaintsGen')} value={totalComplaints} icon={<TrendingUp className="w-5 h-5" />} color="amber" />
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900">Active Campaigns</h3>
-          <button onClick={() => onNavChange('create')} className="text-sm text-fuchsia-600 hover:underline">Create new</button>
+          <h3 className="font-semibold text-gray-900">{t('inf.activeCampaigns')}</h3>
+          <button onClick={() => onNavChange('create')} className="text-sm text-fuchsia-600 hover:underline">{t('inf.createNew')}</button>
         </div>
         {myCampaigns.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">No campaigns yet</p>
+          <p className="text-sm text-gray-400 text-center py-6">{t('inf.noCampaigns')}</p>
         ) : (
           <div className="space-y-3">
             {myCampaigns.map((c) => (
               <div key={c.id} onClick={() => onNavChange('campaigns')} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
                 <div><p className="text-sm font-medium text-gray-900">{c.title}</p><p className="text-xs text-gray-400">{c.referralCode} · {c.area}</p></div>
-                <div className="text-right"><p className="text-sm font-semibold text-gray-900">{c.reach.toLocaleString()}</p><p className="text-xs text-gray-400">reached</p></div>
+                <div className="text-right"><p className="text-sm font-semibold text-gray-900">{c.reach.toLocaleString()}</p><p className="text-xs text-gray-400">{t('inf.reached')}</p></div>
               </div>
             ))}
           </div>
@@ -80,15 +87,16 @@ function Overview({ onNavChange }: { onNavChange: (id: string) => void }) {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 className="font-semibold text-gray-900 mb-4">Engagement Rate</h3>
+        <h3 className="font-semibold text-gray-900 mb-4">{t('inf.engagementRate')}</h3>
         <p className="text-3xl font-bold text-fuchsia-600">{avgEngagement}%</p>
-        <p className="text-sm text-gray-400 mt-1">Average across all campaigns</p>
+        <p className="text-sm text-gray-400 mt-1">{t('inf.avgEngagement')}</p>
       </div>
     </div>
   );
 }
 
 function CampaignsView() {
+  const { t } = useI18n();
   const { campaigns, currentUser, toast } = useStore();
   const myCampaigns = campaigns.filter((c) => c.influencerId === currentUser?.id);
   const [selected, setSelected] = useState<Campaign | null>(null);
@@ -96,7 +104,7 @@ function CampaignsView() {
   const copyLink = (code: string) => {
     const link = `https://jansamvad.app/ref/${code}`;
     navigator.clipboard?.writeText(link).catch(() => {});
-    toast('Referral link copied!', 'success');
+    toast(t('inf.linkCopied'), 'success');
   };
 
   return (
@@ -104,7 +112,7 @@ function CampaignsView() {
       {myCampaigns.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
           <Megaphone className="w-10 h-10 text-gray-300 mx-auto" />
-          <p className="text-gray-400 mt-3">No campaigns yet</p>
+          <p className="text-gray-400 mt-3">{t('inf.noCampaigns')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -118,18 +126,18 @@ function CampaignsView() {
                 </div>
                 <p className="text-sm text-gray-600 mb-3">{c.description}</p>
                 <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                  <div className="p-2 bg-gray-50 rounded"><p className="text-gray-400">Area</p><p className="font-medium text-gray-700">{c.area}</p></div>
-                  <div className="p-2 bg-gray-50 rounded"><p className="text-gray-400">Referral Code</p><p className="font-medium text-fuchsia-600">{c.referralCode}</p></div>
+                  <div className="p-2 bg-gray-50 rounded"><p className="text-gray-400">{t('profile.area')}</p><p className="font-medium text-gray-700">{c.area}</p></div>
+                  <div className="p-2 bg-gray-50 rounded"><p className="text-gray-400">{t('inf.referralCode')}</p><p className="font-medium text-fuchsia-600">{c.referralCode}</p></div>
                 </div>
                 <div className="grid grid-cols-4 gap-2 text-center mb-3">
-                  <div><p className="text-sm font-bold text-gray-900">{c.reach.toLocaleString()}</p><p className="text-[10px] text-gray-400">Reach</p></div>
-                  <div><p className="text-sm font-bold text-gray-900">{c.clicks}</p><p className="text-[10px] text-gray-400">Clicks</p></div>
-                  <div><p className="text-sm font-bold text-gray-900">{c.newUsers}</p><p className="text-[10px] text-gray-400">New Users</p></div>
-                  <div><p className="text-sm font-bold text-gray-900">{c.complaintsGenerated}</p><p className="text-[10px] text-gray-400">Complaints</p></div>
+                  <div><p className="text-sm font-bold text-gray-900">{c.reach.toLocaleString()}</p><p className="text-[10px] text-gray-400">{t('inf.reachOverTime').split(' ')[0]}</p></div>
+                  <div><p className="text-sm font-bold text-gray-900">{c.clicks}</p><p className="text-[10px] text-gray-400">{t('inf.clicks')}</p></div>
+                  <div><p className="text-sm font-bold text-gray-900">{c.newUsers}</p><p className="text-[10px] text-gray-400">{t('inf.newUsers')}</p></div>
+                  <div><p className="text-sm font-bold text-gray-900">{c.complaintsGenerated}</p><p className="text-[10px] text-gray-400">{t('citizen.complaints')}</p></div>
                 </div>
                 <div className="flex gap-2 pt-3 border-t border-gray-100">
-                  <button onClick={() => setSelected(c)} className="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-200 flex items-center justify-center gap-1"><BarChart3 className="w-3 h-3" /> Analytics</button>
-                  <button onClick={() => copyLink(c.referralCode)} className="flex-1 px-3 py-1.5 bg-fuchsia-600 text-white rounded-lg text-xs font-medium hover:bg-fuchsia-700 flex items-center justify-center gap-1"><Copy className="w-3 h-3" /> Copy Link</button>
+                  <button onClick={() => setSelected(c)} className="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-200 flex items-center justify-center gap-1"><BarChart3 className="w-3 h-3" /> {t('nav.analytics')}</button>
+                  <button onClick={() => copyLink(c.referralCode)} className="flex-1 px-3 py-1.5 bg-fuchsia-600 text-white rounded-lg text-xs font-medium hover:bg-fuchsia-700 flex items-center justify-center gap-1"><Copy className="w-3 h-3" /> {t('inf.copyLink')}</button>
                 </div>
               </div>
             </div>
@@ -137,21 +145,21 @@ function CampaignsView() {
         </div>
       )}
 
-      <Modal open={!!selected} onClose={() => setSelected(null)} title="Campaign Analytics" size="md">
+      <Modal open={!!selected} onClose={() => setSelected(null)} title={t('inf.campaignAnalytics')} size="md">
         {selected && (
           <div className="space-y-4">
             <div>
               <h4 className="font-bold text-gray-900">{selected.title}</h4>
-              <p className="text-xs text-gray-400">Referral: {selected.referralCode}</p>
+              <p className="text-xs text-gray-400">{t('inf.referralCode')}: {selected.referralCode}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-blue-50 rounded-lg"><Eye className="w-5 h-5 text-blue-600 mb-1" /><p className="text-xl font-bold text-gray-900">{selected.reach.toLocaleString()}</p><p className="text-xs text-gray-400">Reach</p></div>
-              <div className="p-3 bg-amber-50 rounded-lg"><MousePointerClick className="w-5 h-5 text-amber-600 mb-1" /><p className="text-xl font-bold text-gray-900">{selected.clicks}</p><p className="text-xs text-gray-400">Clicks</p></div>
-              <div className="p-3 bg-emerald-50 rounded-lg"><Users className="w-5 h-5 text-emerald-600 mb-1" /><p className="text-xl font-bold text-gray-900">{selected.newUsers}</p><p className="text-xs text-gray-400">New Users</p></div>
-              <div className="p-3 bg-fuchsia-50 rounded-lg"><TrendingUp className="w-5 h-5 text-fuchsia-600 mb-1" /><p className="text-xl font-bold text-gray-900">{selected.complaintsGenerated}</p><p className="text-xs text-gray-400">Complaints</p></div>
+              <div className="p-3 bg-blue-50 rounded-lg"><Eye className="w-5 h-5 text-blue-600 mb-1" /><p className="text-xl font-bold text-gray-900">{selected.reach.toLocaleString()}</p><p className="text-xs text-gray-400">{t('inf.peopleReached')}</p></div>
+              <div className="p-3 bg-amber-50 rounded-lg"><MousePointerClick className="w-5 h-5 text-amber-600 mb-1" /><p className="text-xl font-bold text-gray-900">{selected.clicks}</p><p className="text-xs text-gray-400">{t('inf.clicks')}</p></div>
+              <div className="p-3 bg-emerald-50 rounded-lg"><Users className="w-5 h-5 text-emerald-600 mb-1" /><p className="text-xl font-bold text-gray-900">{selected.newUsers}</p><p className="text-xs text-gray-400">{t('inf.newUsers')}</p></div>
+              <div className="p-3 bg-fuchsia-50 rounded-lg"><TrendingUp className="w-5 h-5 text-fuchsia-600 mb-1" /><p className="text-xl font-bold text-gray-900">{selected.complaintsGenerated}</p><p className="text-xs text-gray-400">{t('citizen.complaints')}</p></div>
             </div>
             <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-500">Engagement Rate</p>
+              <p className="text-sm text-gray-500">{t('inf.engagementRate')}</p>
               <p className="text-2xl font-bold text-fuchsia-600">{selected.engagementRate}%</p>
             </div>
           </div>
@@ -162,6 +170,7 @@ function CampaignsView() {
 }
 
 function CreateCampaign({ onNavChange }: { onNavChange: (id: string) => void }) {
+  const { t } = useI18n();
   const { addCampaign, currentUser, toast } = useStore();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -178,7 +187,7 @@ function CreateCampaign({ onNavChange }: { onNavChange: (id: string) => void }) 
 
   const handleCreate = () => {
     if (!title.trim() || !description.trim() || !civicIssue || !area) {
-      toast('Please fill all required fields', 'warning');
+      toast(t('inf.errFields'), 'warning');
       return;
     }
     const campaign = addCampaign({
@@ -193,13 +202,13 @@ function CreateCampaign({ onNavChange }: { onNavChange: (id: string) => void }) 
       influencerName: currentUser?.name || '',
     });
     setCreated(campaign);
-    toast('Campaign created successfully!', 'success');
+    toast(t('inf.campaignCreatedSuccess'), 'success');
   };
 
   const copyLink = () => {
     if (!created) return;
     navigator.clipboard?.writeText(`https://jansamvad.app/ref/${created.referralCode}`).catch(() => {});
-    toast('Referral link copied!', 'success');
+    toast(t('inf.linkCopied'), 'success');
   };
 
   if (created) {
@@ -208,15 +217,15 @@ function CreateCampaign({ onNavChange }: { onNavChange: (id: string) => void }) 
         <div className="w-16 h-16 bg-fuchsia-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <Megaphone className="w-8 h-8 text-fuchsia-600" />
         </div>
-        <h3 className="text-xl font-bold text-gray-900">Campaign Created!</h3>
+        <h3 className="text-xl font-bold text-gray-900">{t('inf.campaignCreated')}</h3>
         <div className="mt-4 space-y-2 text-sm text-left">
-          <div className="flex justify-between p-2 bg-gray-50 rounded-lg"><span className="text-gray-500">Campaign</span><span className="font-semibold">{created.title}</span></div>
-          <div className="flex justify-between p-2 bg-fuchsia-50 rounded-lg"><span className="text-gray-500">Referral Code</span><span className="font-semibold text-fuchsia-600">{created.referralCode}</span></div>
-          <div className="flex justify-between p-2 bg-gray-50 rounded-lg"><span className="text-gray-500">Area</span><span className="font-semibold">{created.area}</span></div>
+          <div className="flex justify-between p-2 bg-gray-50 rounded-lg"><span className="text-gray-500">{t('inf.campaign')}</span><span className="font-semibold">{created.title}</span></div>
+          <div className="flex justify-between p-2 bg-fuchsia-50 rounded-lg"><span className="text-gray-500">{t('inf.referralCode')}</span><span className="font-semibold text-fuchsia-600">{created.referralCode}</span></div>
+          <div className="flex justify-between p-2 bg-gray-50 rounded-lg"><span className="text-gray-500">{t('profile.area')}</span><span className="font-semibold">{created.area}</span></div>
         </div>
         <div className="flex gap-3 mt-6">
-          <button onClick={copyLink} className="flex-1 px-4 py-2.5 bg-fuchsia-600 text-white rounded-lg text-sm font-medium hover:bg-fuchsia-700 flex items-center justify-center gap-2"><Copy className="w-4 h-4" /> Copy Link</button>
-          <button onClick={() => { setCreated(null); onNavChange('campaigns'); }} className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50">View Campaigns</button>
+          <button onClick={copyLink} className="flex-1 px-4 py-2.5 bg-fuchsia-600 text-white rounded-lg text-sm font-medium hover:bg-fuchsia-700 flex items-center justify-center gap-2"><Copy className="w-4 h-4" /> {t('inf.copyLink')}</button>
+          <button onClick={() => { setCreated(null); onNavChange('campaigns'); }} className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50">{t('inf.viewCampaigns')}</button>
         </div>
       </div>
     );
@@ -226,55 +235,55 @@ function CreateCampaign({ onNavChange }: { onNavChange: (id: string) => void }) 
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
         <div>
-          <label className="text-sm font-medium text-gray-700">Campaign Title *</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Clean Our City"
+          <label className="text-sm font-medium text-gray-700">{t('inf.campaignTitle')}</label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('inf.campaignPlaceholder')}
             className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-fuchsia-500 outline-none" />
         </div>
         <div>
-          <label className="text-sm font-medium text-gray-700">Description *</label>
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Describe the campaign..."
+          <label className="text-sm font-medium text-gray-700">{t('report.description')}</label>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder={t('inf.descPlaceholder')}
             className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-fuchsia-500 outline-none resize-none" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium text-gray-700">Civic Issue *</label>
+            <label className="text-sm font-medium text-gray-700">{t('inf.civicIssue')}</label>
             <select value={civicIssue} onChange={(e) => setCivicIssue(e.target.value)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none bg-white focus:ring-2 focus:ring-fuchsia-500">
-              <option value="">Select issue</option>
+              <option value="">{t('inf.selectIssue')}</option>
               {CIVIC_ISSUES.map((i) => <option key={i} value={i}>{i}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700">Area *</label>
+            <label className="text-sm font-medium text-gray-700">{t('inf.areaReq')}</label>
             <select value={area} onChange={(e) => setArea(e.target.value)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none bg-white focus:ring-2 focus:ring-fuchsia-500">
-              <option value="">Select area</option>
+              <option value="">{t('report.selectArea')}</option>
               {AREAS.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
         </div>
         <div>
-          <label className="text-sm font-medium text-gray-700">Campaign Image</label>
+          <label className="text-sm font-medium text-gray-700">{t('inf.campaignImage')}</label>
           <div className="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-fuchsia-400">
             <input type="file" accept="image/*" className="hidden" id="camp-img"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) setImageUrl(URL.createObjectURL(f)); }} />
             <label htmlFor="camp-img" className="cursor-pointer">
               <ImageIcon className="w-6 h-6 text-gray-400 mx-auto" />
-              <p className="text-xs text-fuchsia-600 mt-1">{imageUrl ? 'Image selected' : 'Click to upload'}</p>
+              <p className="text-xs text-fuchsia-600 mt-1">{imageUrl ? t('report.imageSelected') : t('report.clickUpload')}</p>
             </label>
           </div>
           {imageUrl && <img src={imageUrl} alt="Preview" className="mt-2 rounded-lg max-h-32 w-full object-cover" />}
         </div>
         <div>
-          <label className="text-sm font-medium text-gray-700">Call to Action</label>
-          <input value={callToAction} onChange={(e) => setCallToAction(e.target.value)} placeholder="e.g. Report garbage issues now!"
+          <label className="text-sm font-medium text-gray-700">{t('inf.callToAction')}</label>
+          <input value={callToAction} onChange={(e) => setCallToAction(e.target.value)} placeholder={t('inf.callPlaceholder')}
             className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-fuchsia-500 outline-none" />
         </div>
         <div className="bg-fuchsia-50 rounded-lg p-3 flex items-center gap-2">
           <Gift className="w-4 h-4 text-fuchsia-600" />
-          <p className="text-sm text-fuchsia-700">Referral code will be: <span className="font-bold">{generateCode()}</span></p>
+          <p className="text-sm text-fuchsia-700">{t('inf.referralWillBe')} <span className="font-bold">{generateCode()}</span></p>
         </div>
         <button onClick={handleCreate}
           className="w-full px-4 py-3 bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-lg font-medium text-sm hover:opacity-90 flex items-center justify-center gap-2">
-          <PlusCircle className="w-4 h-4" /> Create Campaign
+          <PlusCircle className="w-4 h-4" /> {t('inf.createCampaign')}
         </button>
       </div>
     </div>
@@ -282,13 +291,14 @@ function CreateCampaign({ onNavChange }: { onNavChange: (id: string) => void }) 
 }
 
 function AnalyticsView() {
+  const { t } = useI18n();
   const { campaigns, currentUser } = useStore();
   const myCampaigns = campaigns.filter((c) => c.influencerId === currentUser?.id);
 
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 className="font-semibold text-gray-900 mb-4">Campaign Reach Over Time</h3>
+        <h3 className="font-semibold text-gray-900 mb-4">{t('inf.reachOverTime')}</h3>
         <BarChart data={[
           { label: 'Wk 1', value: 3200, color: '#d946ef' },
           { label: 'Wk 2', value: 5100, color: '#d946ef' },
@@ -301,12 +311,12 @@ function AnalyticsView() {
           <div key={c.id} className="bg-white rounded-xl border border-gray-200 p-5">
             <h3 className="font-semibold text-gray-900 mb-3">{c.title}</h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="p-2 bg-blue-50 rounded"><p className="text-xs text-gray-400">Reach</p><p className="font-bold">{c.reach.toLocaleString()}</p></div>
-              <div className="p-2 bg-amber-50 rounded"><p className="text-xs text-gray-400">Clicks</p><p className="font-bold">{c.clicks}</p></div>
-              <div className="p-2 bg-emerald-50 rounded"><p className="text-xs text-gray-400">New Users</p><p className="font-bold">{c.newUsers}</p></div>
-              <div className="p-2 bg-fuchsia-50 rounded"><p className="text-xs text-gray-400">Complaints</p><p className="font-bold">{c.complaintsGenerated}</p></div>
+              <div className="p-2 bg-blue-50 rounded"><p className="text-xs text-gray-400">{t('inf.peopleReached')}</p><p className="font-bold">{c.reach.toLocaleString()}</p></div>
+              <div className="p-2 bg-amber-50 rounded"><p className="text-xs text-gray-400">{t('inf.clicks')}</p><p className="font-bold">{c.clicks}</p></div>
+              <div className="p-2 bg-emerald-50 rounded"><p className="text-xs text-gray-400">{t('inf.newUsers')}</p><p className="font-bold">{c.newUsers}</p></div>
+              <div className="p-2 bg-fuchsia-50 rounded"><p className="text-xs text-gray-400">{t('citizen.complaints')}</p><p className="font-bold">{c.complaintsGenerated}</p></div>
             </div>
-            <div className="mt-3 p-2 bg-gray-50 rounded text-center"><p className="text-xs text-gray-400">Engagement Rate</p><p className="text-lg font-bold text-fuchsia-600">{c.engagementRate}%</p></div>
+            <div className="mt-3 p-2 bg-gray-50 rounded text-center"><p className="text-xs text-gray-400">{t('inf.engagementRate')}</p><p className="text-lg font-bold text-fuchsia-600">{c.engagementRate}%</p></div>
           </div>
         ))}
       </div>
@@ -315,20 +325,21 @@ function AnalyticsView() {
 }
 
 function ReferralsView() {
+  const { t } = useI18n();
   const { campaigns, currentUser, toast } = useStore();
   const myCampaigns = campaigns.filter((c) => c.influencerId === currentUser?.id);
 
   const copyLink = (code: string) => {
     navigator.clipboard?.writeText(`https://jansamvad.app/ref/${code}`).catch(() => {});
-    toast('Referral link copied!', 'success');
+    toast(t('inf.linkCopied'), 'success');
   };
 
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 className="font-semibold text-gray-900 mb-4">Your Referral Codes</h3>
+        <h3 className="font-semibold text-gray-900 mb-4">{t('inf.yourReferralCodes')}</h3>
         {myCampaigns.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">No referral codes yet. Create a campaign first.</p>
+          <p className="text-sm text-gray-400 text-center py-6">{t('inf.noReferralCodes')}</p>
         ) : (
           <div className="space-y-3">
             {myCampaigns.map((c) => (
@@ -339,16 +350,16 @@ function ReferralsView() {
                     <Link2 className="w-3 h-3 text-fuchsia-500" />
                     <code className="text-xs text-fuchsia-600 font-mono">{c.referralCode}</code>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">{c.newUsers} new citizens joined · {c.complaintsGenerated} complaints generated</p>
+                  <p className="text-xs text-gray-400 mt-1">{c.newUsers} {t('inf.newCitizensJoined')} · {c.complaintsGenerated} {t('inf.complaintsGenerated2')}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => copyLink(c.referralCode)} className="p-2 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600" title="Copy link">
+                  <button onClick={() => copyLink(c.referralCode)} className="p-2 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600" title={t('inf.copyLink')}>
                     <Copy className="w-4 h-4" />
                   </button>
-                  <button onClick={() => toast('QR code generated (demo)', 'info')} className="p-2 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600" title="QR Code">
+                  <button onClick={() => toast(t('inf.linkCopied'), 'info')} className="p-2 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600" title="QR Code">
                     <QrCode className="w-4 h-4" />
                   </button>
-                  <button onClick={() => toast('Campaign shared (demo)', 'success')} className="p-2 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600" title="Share">
+                  <button onClick={() => toast(t('inf.linkCopied'), 'success')} className="p-2 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600" title="Share">
                     <Share2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -362,6 +373,7 @@ function ReferralsView() {
 }
 
 function ProfileView() {
+  const { t } = useI18n();
   const { currentUser, campaigns } = useStore();
   if (!currentUser) return null;
   const myCampaigns = campaigns.filter((c) => c.influencerId === currentUser.id);
@@ -377,20 +389,20 @@ function ProfileView() {
           </div>
           <div>
             <h3 className="text-xl font-bold text-gray-900">{currentUser.name}</h3>
-            <p className="text-sm text-gray-500">Influencer · {currentUser.area}</p>
+            <p className="text-sm text-gray-500">{t('inf.influencer')} · {currentUser.area}</p>
           </div>
         </div>
         <div className="mt-6 grid grid-cols-2 gap-4">
-          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">Email</p><p className="text-sm font-medium">{currentUser.email}</p></div>
-          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">Phone</p><p className="text-sm font-medium">{currentUser.phone}</p></div>
-          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">Area</p><p className="text-sm font-medium">{currentUser.area}</p></div>
-          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">Campaigns</p><p className="text-sm font-medium">{myCampaigns.length}</p></div>
+          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">{t('profile.email')}</p><p className="text-sm font-medium">{currentUser.email}</p></div>
+          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">{t('profile.phone')}</p><p className="text-sm font-medium">{currentUser.phone}</p></div>
+          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">{t('profile.area')}</p><p className="text-sm font-medium">{currentUser.area}</p></div>
+          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">{t('profile.campaigns')}</p><p className="text-sm font-medium">{myCampaigns.length}</p></div>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Campaigns" value={myCampaigns.length} icon={<Megaphone className="w-5 h-5" />} color="fuchsia" />
-        <StatCard label="Reach" value={totalReach.toLocaleString()} icon={<Users className="w-5 h-5" />} color="blue" />
-        <StatCard label="New Citizens" value={totalNew} icon={<UserIcon className="w-5 h-5" />} color="emerald" />
+        <StatCard label={t('profile.campaigns')} value={myCampaigns.length} icon={<Megaphone className="w-5 h-5" />} color="fuchsia" />
+        <StatCard label={t('profile.reach')} value={totalReach.toLocaleString()} icon={<Users className="w-5 h-5" />} color="blue" />
+        <StatCard label={t('profile.newCitizens')} value={totalNew} icon={<UserIcon className="w-5 h-5" />} color="emerald" />
       </div>
     </div>
   );

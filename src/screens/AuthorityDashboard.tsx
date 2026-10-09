@@ -10,30 +10,38 @@ import Modal from '@/components/ui/Modal';
 import BarChart, { DonutChart } from '@/components/ui/Charts';
 import ComplaintDetailModal from '@/components/ComplaintDetailModal';
 import { useStore } from '@/lib/store';
+import { useI18n } from '@/lib/i18n';
 import { formatDate, formatDateTime } from '@/lib/utils';
 import type { Complaint, Priority } from '@/lib/types';
 
-const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-  { id: 'complaints', label: 'Complaints', icon: <ClipboardList className="w-4 h-4" /> },
-  { id: 'map', label: 'Map', icon: <Map className="w-4 h-4" /> },
-  { id: 'departments', label: 'Departments', icon: <Building2 className="w-4 h-4" /> },
-  { id: 'workforce', label: 'Workforce', icon: <HardHat className="w-4 h-4" /> },
-  { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-4 h-4" /> },
-  { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
-];
+const navItems: NavItem[] = [];
+
+function useNavItems(): NavItem[] {
+  const { t } = useI18n();
+  return [
+    { id: 'dashboard', label: t('nav.dashboard'), icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'complaints', label: t('nav.complaints'), icon: <ClipboardList className="w-4 h-4" /> },
+    { id: 'map', label: t('nav.map'), icon: <Map className="w-4 h-4" /> },
+    { id: 'departments', label: t('nav.departments'), icon: <Building2 className="w-4 h-4" /> },
+    { id: 'workforce', label: t('nav.workforce'), icon: <HardHat className="w-4 h-4" /> },
+    { id: 'analytics', label: t('nav.analytics'), icon: <BarChart3 className="w-4 h-4" /> },
+    { id: 'notifications', label: t('nav.notifications'), icon: <Bell className="w-4 h-4" /> },
+  ];
+}
 
 export default function AuthorityDashboard() {
   const [activeNav, setActiveNav] = useState('dashboard');
+  const { t } = useI18n();
+  const navItems = useNavItems();
   const titles: Record<string, string> = {
-    dashboard: 'Dashboard', complaints: 'Complaint Management', map: 'Complaint Map',
-    departments: 'Departments', workforce: 'Workforce', analytics: 'Analytics', notifications: 'Notifications',
+    dashboard: t('nav.dashboard'), complaints: t('auth_dash.complaintMgmt'), map: t('auth_dash.complaintMap'),
+    departments: t('nav.departments'), workforce: t('nav.workforce'), analytics: t('nav.analytics'), notifications: t('nav.notifications'),
   };
   const { complaints } = useStore();
 
   return (
     <DashboardLayout navItems={navItems} activeNav={activeNav} onNavChange={setActiveNav}
-      title={titles[activeNav]} subtitle="Municipal Corporation, Pimpri-Chinchwad" role="authority">
+      title={titles[activeNav]} subtitle={t('layout.municipalCorp')} role="authority">
       {activeNav === 'dashboard' && <Overview complaints={complaints} onNavChange={setActiveNav} />}
       {activeNav === 'complaints' && <ComplaintManagement />}
       {activeNav === 'map' && <MapView />}
@@ -46,6 +54,7 @@ export default function AuthorityDashboard() {
 }
 
 function Overview({ complaints, onNavChange }: { complaints: Complaint[]; onNavChange: (id: string) => void }) {
+  const { t } = useI18n();
   const newCount = complaints.filter((c) => c.status === 'Submitted').length;
   const highPriority = complaints.filter((c) => c.priority === 'High').length;
   const inProgress = complaints.filter((c) => c.status === 'In Progress').length;
@@ -55,17 +64,17 @@ function Overview({ complaints, onNavChange }: { complaints: Complaint[]; onNavC
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <StatCard label="Total" value={complaints.length} icon={<ClipboardList className="w-5 h-5" />} color="blue" />
-        <StatCard label="New" value={newCount} icon={<AlertTriangle className="w-5 h-5" />} color="amber" />
-        <StatCard label="High Priority" value={highPriority} icon={<AlertTriangle className="w-5 h-5" />} color="rose" />
-        <StatCard label="In Progress" value={inProgress} icon={<Clock className="w-5 h-5" />} color="violet" />
-        <StatCard label="Resolved" value={resolved} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
-        <StatCard label="Avg Time" value={avgTime} icon={<TrendingUp className="w-5 h-5" />} color="cyan" />
+        <StatCard label={t('auth_dash.total')} value={complaints.length} icon={<ClipboardList className="w-5 h-5" />} color="blue" />
+        <StatCard label={t('auth_dash.new')} value={newCount} icon={<AlertTriangle className="w-5 h-5" />} color="amber" />
+        <StatCard label={t('auth_dash.highPriority')} value={highPriority} icon={<AlertTriangle className="w-5 h-5" />} color="rose" />
+        <StatCard label={t('auth_dash.inProgress')} value={inProgress} icon={<Clock className="w-5 h-5" />} color="violet" />
+        <StatCard label={t('auth_dash.resolved')} value={resolved} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
+        <StatCard label={t('auth_dash.avgTime')} value={avgTime} icon={<TrendingUp className="w-5 h-5" />} color="cyan" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="font-semibold text-gray-900 mb-4">Complaints by Status</h3>
+          <h3 className="font-semibold text-gray-900 mb-4">{t('auth_dash.byStatus')}</h3>
           <DonutChart segments={[
             { label: 'Submitted', value: complaints.filter((c) => c.status === 'Submitted').length, color: '#3b82f6' },
             { label: 'Verified', value: complaints.filter((c) => c.status === 'Verified').length, color: '#06b6d4' },
@@ -75,7 +84,7 @@ function Overview({ complaints, onNavChange }: { complaints: Complaint[]; onNavC
           ].filter((s) => s.value > 0)} />
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="font-semibold text-gray-900 mb-4">Pending Actions</h3>
+          <h3 className="font-semibold text-gray-900 mb-4">{t('auth_dash.pendingActions')}</h3>
           <div className="space-y-2">
             {complaints.filter((c) => ['Submitted', 'Verified'].includes(c.status)).slice(0, 5).map((c) => (
               <div key={c.id} onClick={() => onNavChange('complaints')}
@@ -85,7 +94,7 @@ function Overview({ complaints, onNavChange }: { complaints: Complaint[]; onNavC
               </div>
             ))}
             {complaints.filter((c) => ['Submitted', 'Verified'].includes(c.status)).length === 0 && (
-              <p className="text-sm text-gray-400 text-center py-6">No pending actions</p>
+              <p className="text-sm text-gray-400 text-center py-6">{t('auth_dash.noPending')}</p>
             )}
           </div>
         </div>
@@ -95,6 +104,7 @@ function Overview({ complaints, onNavChange }: { complaints: Complaint[]; onNavC
 }
 
 function ComplaintManagement() {
+  const { t } = useI18n();
   const { complaints, workforce, verifyComplaint, rejectComplaint, assignWorkforce, setComplaintPriority, toast } = useStore();
   const [selected, setSelected] = useState<Complaint | null>(null);
   const [filter, setFilter] = useState('All');
@@ -109,7 +119,7 @@ function ComplaintManagement() {
   const handleAssign = () => {
     if (!currentComplaint || !workforceId) return;
     assignWorkforce(currentComplaint.id, workforceId);
-    toast(`Complaint ${currentComplaint.id} assigned to ${workforce.find((w) => w.id === workforceId)?.name}`, 'success');
+    toast(t('auth_dash.assigned', { id: currentComplaint.id, name: workforce.find((w) => w.id === workforceId)?.name || '' }), 'success');
     setAssignModal(false);
     setWorkforceId('');
   };
@@ -117,7 +127,7 @@ function ComplaintManagement() {
   const handlePriority = () => {
     if (!currentComplaint) return;
     setComplaintPriority(currentComplaint.id, newPriority);
-    toast(`Priority changed to ${newPriority}`, 'success');
+    toast(t('auth_dash.priorityChanged', { priority: newPriority }), 'success');
     setPriorityModal(false);
   };
 
@@ -127,7 +137,7 @@ function ComplaintManagement() {
         {['All', 'Submitted', 'Verified', 'Assigned', 'In Progress', 'Resolved', 'Rejected'].map((f) => (
           <button key={f} onClick={() => setFilter(f)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium ${filter === f ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-            {f}
+            {f === 'All' ? t('filter.all') : t(`filter.${f.toLowerCase().replace(' ', '').replace('progress', 'InProgress')}`) || t(`status.${f}`)}
           </button>
         ))}
       </div>
@@ -138,7 +148,7 @@ function ComplaintManagement() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 {['ID', 'Citizen', 'Category', 'Dept', 'Priority', 'Location', 'Date', 'Status', 'Workforce', 'Action'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">{h === 'ID' ? t('myComplaints.table.id') : h === 'Citizen' ? t('myComplaints.table.citizen') : h === 'Category' ? t('myComplaints.table.category') : h === 'Dept' ? t('myComplaints.table.dept') : h === 'Priority' ? t('myComplaints.table.priority') : h === 'Location' ? t('myComplaints.table.location') : h === 'Date' ? t('myComplaints.table.date') : h === 'Status' ? t('myComplaints.table.status') : h === 'Workforce' ? t('myComplaints.table.workforce') : t('myComplaints.table.action')}</th>
                 ))}
               </tr>
             </thead>
@@ -155,7 +165,7 @@ function ComplaintManagement() {
                   <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
                   <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{c.assignedWorkforceName || '-'}</td>
                   <td className="px-4 py-3">
-                    <button onClick={() => setSelected(c)} className="text-xs text-blue-600 hover:underline font-medium">Open</button>
+                    <button onClick={() => setSelected(c)} className="text-xs text-blue-600 hover:underline font-medium">{t('auth_dash.open')}</button>
                   </td>
                 </tr>
               ))}
@@ -168,61 +178,61 @@ function ComplaintManagement() {
         actions={currentComplaint && currentComplaint.status !== 'Rejected' && currentComplaint.status !== 'Resolved' && (
           <>
             {currentComplaint.status === 'Submitted' && (
-              <button onClick={() => { verifyComplaint(currentComplaint.id); toast('Complaint verified', 'success'); setSelected(null); }}
+              <button onClick={() => { verifyComplaint(currentComplaint.id); toast(t('auth_dash.verified'), 'success'); setSelected(null); }}
                 className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" /> Verify
+                <CheckCircle2 className="w-4 h-4" /> {t('auth_dash.verify')}
               </button>
             )}
             {currentComplaint.status !== 'Submitted' && (
               <button onClick={() => { setAssignModal(true); }}
                 className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 flex items-center gap-1.5">
-                <HardHat className="w-4 h-4" /> Assign Workforce
+                <HardHat className="w-4 h-4" /> {t('auth_dash.assignWorkforce')}
               </button>
             )}
             <button onClick={() => { setNewPriority(currentComplaint.priority); setPriorityModal(true); }}
               className="px-3 py-2 bg-amber-500 text-white rounded-lg text-xs font-medium hover:bg-amber-600 flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4" /> Change Priority
+              <AlertTriangle className="w-4 h-4" /> {t('auth_dash.changePriority')}
             </button>
-            <button onClick={() => { rejectComplaint(currentComplaint.id); toast('Complaint rejected', 'warning'); setSelected(null); }}
+            <button onClick={() => { rejectComplaint(currentComplaint.id); toast(t('auth_dash.rejected'), 'warning'); setSelected(null); }}
               className="px-3 py-2 bg-rose-600 text-white rounded-lg text-xs font-medium hover:bg-rose-700 flex items-center gap-1.5">
-              <XCircle className="w-4 h-4" /> Reject
+              <XCircle className="w-4 h-4" /> {t('auth_dash.reject')}
             </button>
           </>
         )}
       />
 
       {/* Assign Workforce Modal */}
-      <Modal open={assignModal} onClose={() => setAssignModal(false)} title="Assign Workforce" size="sm">
+      <Modal open={assignModal} onClose={() => setAssignModal(false)} title={t('auth_dash.assignTitle')} size="sm">
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">Select a workforce member to assign to {currentComplaint?.id}</p>
+          <p className="text-sm text-gray-500">{t('auth_dash.selectWorkforceToAssign', { id: currentComplaint?.id || '' })}</p>
           <select value={workforceId} onChange={(e) => setWorkforceId(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-            <option value="">Select workforce</option>
+            <option value="">{t('auth_dash.selectWorkforce')}</option>
             {workforce.map((w) => (
               <option key={w.id} value={w.id}>{w.name} - {w.department} ({w.availability})</option>
             ))}
           </select>
           <button onClick={handleAssign} disabled={!workforceId}
             className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-            Assign
+            {t('auth_dash.assign')}
           </button>
         </div>
       </Modal>
 
       {/* Change Priority Modal */}
-      <Modal open={priorityModal} onClose={() => setPriorityModal(false)} title="Change Priority" size="sm">
+      <Modal open={priorityModal} onClose={() => setPriorityModal(false)} title={t('auth_dash.priorityTitle')} size="sm">
         <div className="space-y-3">
           <div className="flex gap-2">
             {(['High', 'Medium', 'Low'] as Priority[]).map((p) => (
               <button key={p} onClick={() => setNewPriority(p)}
                 className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border-2 ${newPriority === p ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600'}`}>
-                {p}
+                {p === 'High' ? t('priority.High') : p === 'Medium' ? t('priority.Medium') : t('priority.Low')}
               </button>
             ))}
           </div>
           <button onClick={handlePriority}
             className="w-full px-4 py-2.5 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600">
-            Confirm
+            {t('auth_dash.confirm')}
           </button>
         </div>
       </Modal>
@@ -231,6 +241,7 @@ function ComplaintManagement() {
 }
 
 function MapView() {
+  const { t } = useI18n();
   const { complaints } = useStore();
   const [selected, setSelected] = useState<Complaint | null>(null);
 
@@ -246,9 +257,9 @@ function MapView() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4 text-sm">
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-rose-500 rounded-full" /> High Priority</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-amber-400 rounded-full" /> Medium Priority</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-emerald-400 rounded-full" /> Low Priority</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-rose-500 rounded-full" /> {t('auth_dash.highP')}</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-amber-400 rounded-full" /> {t('auth_dash.medP')}</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-emerald-400 rounded-full" /> {t('auth_dash.lowP')}</span>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -300,6 +311,7 @@ function MapView() {
 }
 
 function DepartmentsView() {
+  const { t } = useI18n();
   const { departments, complaints } = useStore();
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -309,12 +321,12 @@ function DepartmentsView() {
           <div key={d.id} className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2.5 bg-teal-50 rounded-lg"><Building2 className="w-5 h-5 text-teal-600" /></div>
-              <div><h3 className="font-semibold text-gray-900 text-sm">{d.name}</h3><p className="text-xs text-gray-400">Head: {d.head}</p></div>
+              <div><h3 className="font-semibold text-gray-900 text-sm">{d.name}</h3><p className="text-xs text-gray-400">{t('auth_dash.deptHead', { name: d.head })}</p></div>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="p-2 bg-gray-50 rounded-lg"><p className="text-lg font-bold text-gray-900">{deptComplaints.length}</p><p className="text-xs text-gray-400">Total</p></div>
-              <div className="p-2 bg-amber-50 rounded-lg"><p className="text-lg font-bold text-amber-600">{deptComplaints.filter((c) => c.status === 'In Progress').length}</p><p className="text-xs text-gray-400">Active</p></div>
-              <div className="p-2 bg-emerald-50 rounded-lg"><p className="text-lg font-bold text-emerald-600">{deptComplaints.filter((c) => c.status === 'Resolved').length}</p><p className="text-xs text-gray-400">Done</p></div>
+              <div className="p-2 bg-gray-50 rounded-lg"><p className="text-lg font-bold text-gray-900">{deptComplaints.length}</p><p className="text-xs text-gray-400">{t('auth_dash.deptTotal')}</p></div>
+              <div className="p-2 bg-amber-50 rounded-lg"><p className="text-lg font-bold text-amber-600">{deptComplaints.filter((c) => c.status === 'In Progress').length}</p><p className="text-xs text-gray-400">{t('auth_dash.deptActive')}</p></div>
+              <div className="p-2 bg-emerald-50 rounded-lg"><p className="text-lg font-bold text-emerald-600">{deptComplaints.filter((c) => c.status === 'Resolved').length}</p><p className="text-xs text-gray-400">{t('auth_dash.deptDone')}</p></div>
             </div>
           </div>
         );
@@ -324,12 +336,13 @@ function DepartmentsView() {
 }
 
 function WorkforceView() {
+  const { t } = useI18n();
   const { workforce, complaints } = useStore();
   return (
     <div className="overflow-x-auto bg-white rounded-xl border border-gray-200">
       <table className="w-full text-sm">
         <thead className="bg-gray-50 border-b border-gray-200">
-          <tr>{['Name', 'Department', 'Active Tasks', 'Completed', 'Availability'].map((h) => (
+          <tr>{[t('auth_dash.name'), t('nav.departments'), t('wf.activeTasks'), t('auth_dash.completed'), t('auth_dash.availability')].map((h) => (
             <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">{h}</th>
           ))}</tr>
         </thead>
@@ -350,7 +363,7 @@ function WorkforceView() {
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                     w.availability === 'Available' ? 'bg-emerald-100 text-emerald-700' : w.availability === 'Busy' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
-                  }`}>{w.availability}</span>
+                  }`}>{t(`availability.${w.availability}`)}</span>
                 </td>
               </tr>
             );
@@ -362,6 +375,7 @@ function WorkforceView() {
 }
 
 function AnalyticsView() {
+  const { t } = useI18n();
   const { complaints, departments } = useStore();
   const byDept = departments.map((d) => ({
     label: d.name.split(' ')[0],
@@ -373,20 +387,20 @@ function AnalyticsView() {
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="font-semibold text-gray-900 mb-4">Complaints by Department</h3>
+          <h3 className="font-semibold text-gray-900 mb-4">{t('auth_dash.byDept')}</h3>
           <BarChart data={byDept} />
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="font-semibold text-gray-900 mb-4">Priority Distribution</h3>
+          <h3 className="font-semibold text-gray-900 mb-4">{t('auth_dash.priorityDist')}</h3>
           <DonutChart segments={[
-            { label: 'High', value: complaints.filter((c) => c.priority === 'High').length, color: '#f43f5e' },
-            { label: 'Medium', value: complaints.filter((c) => c.priority === 'Medium').length, color: '#f59e0b' },
-            { label: 'Low', value: complaints.filter((c) => c.priority === 'Low').length, color: '#10b981' },
+            { label: t('priority.High'), value: complaints.filter((c) => c.priority === 'High').length, color: '#f43f5e' },
+            { label: t('priority.Medium'), value: complaints.filter((c) => c.priority === 'Medium').length, color: '#f59e0b' },
+            { label: t('priority.Low'), value: complaints.filter((c) => c.priority === 'Low').length, color: '#10b981' },
           ]} />
         </div>
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 className="font-semibold text-gray-900 mb-4">Weekly Complaint Trend</h3>
+        <h3 className="font-semibold text-gray-900 mb-4">{t('auth_dash.weeklyTrend')}</h3>
         <BarChart data={[
           { label: 'Wk 1', value: 3, color: '#0d9488' },
           { label: 'Wk 2', value: 5, color: '#0d9488' },
@@ -399,15 +413,16 @@ function AnalyticsView() {
 }
 
 function NotificationsView() {
+  const { t } = useI18n();
   const { notifications, currentUser, markNotificationRead, markAllNotificationsRead } = useStore();
   const myNotifs = notifications.filter((n) => n.role === 'authority' && n.userId === currentUser?.id);
   return (
     <div className="max-w-2xl mx-auto space-y-3">
       {myNotifs.filter((n) => !n.read).length > 0 && (
-        <button onClick={() => markAllNotificationsRead('authority', currentUser?.id || '')} className="text-sm text-blue-600 hover:underline">Mark all as read</button>
+        <button onClick={() => markAllNotificationsRead('authority', currentUser?.id || '')} className="text-sm text-blue-600 hover:underline">{t('layout.markAllAsRead')}</button>
       )}
       {myNotifs.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-10 text-center"><Bell className="w-10 h-10 text-gray-300 mx-auto" /><p className="text-gray-400 mt-3">No notifications</p></div>
+        <div className="bg-white rounded-xl border border-gray-200 p-10 text-center"><Bell className="w-10 h-10 text-gray-300 mx-auto" /><p className="text-gray-400 mt-3">{t('layout.noNotifications')}</p></div>
       ) : (
         myNotifs.map((n) => (
           <div key={n.id} onClick={() => markNotificationRead(n.id)}

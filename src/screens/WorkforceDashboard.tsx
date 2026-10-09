@@ -1,30 +1,39 @@
 import { useState } from 'react';
 import {
   LayoutDashboard, ClipboardList, History, User as UserIcon,
-  CheckCircle2, Play, MapPin, Camera, FileText, Clock, ArrowRight, Image as ImageIcon,
+  CheckCircle2, Play, MapPin, Camera, Clock, ArrowRight, Image as ImageIcon,
 } from 'lucide-react';
 import DashboardLayout, { type NavItem } from '@/components/DashboardLayout';
 import StatCard from '@/components/ui/StatCard';
 import { PriorityBadge, TaskStatusBadge } from '@/components/ui/Badges';
 import Modal from '@/components/ui/Modal';
 import { useStore } from '@/lib/store';
+import { useI18n } from '@/lib/i18n';
 import { formatDate } from '@/lib/utils';
 import type { Complaint, TaskStatus } from '@/lib/types';
 
-const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-  { id: 'tasks', label: 'My Tasks', icon: <ClipboardList className="w-4 h-4" /> },
-  { id: 'history', label: 'Task History', icon: <History className="w-4 h-4" /> },
-  { id: 'profile', label: 'Profile', icon: <UserIcon className="w-4 h-4" /> },
-];
+function useWorkforceNavItems(): NavItem[] {
+  const { t } = useI18n();
+  return [
+    { id: 'dashboard', label: t('nav.dashboard'), icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'tasks', label: t('nav.tasks'), icon: <ClipboardList className="w-4 h-4" /> },
+    { id: 'history', label: t('nav.history'), icon: <History className="w-4 h-4" /> },
+    { id: 'profile', label: t('nav.profile'), icon: <UserIcon className="w-4 h-4" /> },
+  ];
+}
 
 export default function WorkforceDashboard() {
   const [activeNav, setActiveNav] = useState('dashboard');
-  const titles: Record<string, string> = { dashboard: 'Dashboard', tasks: 'My Tasks', history: 'Task History', profile: 'Profile' };
+  const { t } = useI18n();
+  const navItems = useWorkforceNavItems();
+  const titles: Record<string, string> = {
+    dashboard: t('nav.dashboard'), tasks: t('nav.tasks'),
+    history: t('nav.history'), profile: t('nav.profile'),
+  };
 
   return (
     <DashboardLayout navItems={navItems} activeNav={activeNav} onNavChange={setActiveNav}
-      title={titles[activeNav]} subtitle="Field Operations Unit" role="workforce">
+      title={titles[activeNav]} subtitle={t('layout.fieldOps')} role="workforce">
       {activeNav === 'dashboard' && <Overview onNavChange={setActiveNav} />}
       {activeNav === 'tasks' && <MyTasks />}
       {activeNav === 'history' && <TaskHistory />}
@@ -34,6 +43,7 @@ export default function WorkforceDashboard() {
 }
 
 function Overview({ onNavChange }: { onNavChange: (id: string) => void }) {
+  const { t } = useI18n();
   const { complaints, currentUser } = useStore();
   const myTasks = complaints.filter((c) => c.assignedWorkforceId === currentUser?.id);
   const assigned = myTasks.filter((c) => c.taskStatus === 'Assigned').length;
@@ -43,19 +53,19 @@ function Overview({ onNavChange }: { onNavChange: (id: string) => void }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Assigned Tasks" value={assigned} icon={<ClipboardList className="w-5 h-5" />} color="amber" />
-        <StatCard label="In Progress" value={inProgress} icon={<Play className="w-5 h-5" />} color="violet" />
-        <StatCard label="Completed" value={completed} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
-        <StatCard label="Today's Tasks" value={myTasks.length} icon={<Clock className="w-5 h-5" />} color="blue" />
+        <StatCard label={t('wf.assignedTasks')} value={assigned} icon={<ClipboardList className="w-5 h-5" />} color="amber" />
+        <StatCard label={t('wf.inProgress')} value={inProgress} icon={<Play className="w-5 h-5" />} color="violet" />
+        <StatCard label={t('wf.completed')} value={completed} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
+        <StatCard label={t('wf.todayTasks')} value={myTasks.length} icon={<Clock className="w-5 h-5" />} color="blue" />
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900">Active Tasks</h3>
-          <button onClick={() => onNavChange('tasks')} className="text-sm text-blue-600 hover:underline">View all</button>
+          <h3 className="font-semibold text-gray-900">{t('wf.activeTasks')}</h3>
+          <button onClick={() => onNavChange('tasks')} className="text-sm text-blue-600 hover:underline">{t('wf.viewAll')}</button>
         </div>
         {myTasks.filter((c) => c.taskStatus !== 'Resolved').length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">No active tasks</p>
+          <p className="text-sm text-gray-400 text-center py-6">{t('wf.noActiveTasks')}</p>
         ) : (
           <div className="space-y-3">
             {myTasks.filter((c) => c.taskStatus !== 'Resolved').slice(0, 4).map((c) => (
@@ -72,6 +82,7 @@ function Overview({ onNavChange }: { onNavChange: (id: string) => void }) {
 }
 
 function MyTasks() {
+  const { t } = useI18n();
   const { complaints, currentUser, updateTaskStatus, resolveComplaint, toast } = useStore();
   const [selected, setSelected] = useState<Complaint | null>(null);
   const [resolveModal, setResolveModal] = useState(false);
@@ -82,13 +93,13 @@ function MyTasks() {
   const myTasks = complaints.filter((c) => c.assignedWorkforceId === currentUser?.id && c.taskStatus !== 'Resolved');
   const current = selected ? complaints.find((c) => c.id === selected.id) || selected : null;
 
-  const handleAccept = (c: Complaint) => { updateTaskStatus(c.id, 'Accepted'); toast('Task accepted', 'success'); };
-  const handleStart = (c: Complaint) => { updateTaskStatus(c.id, 'In Progress'); toast('Task started', 'success'); };
+  const handleAccept = (c: Complaint) => { updateTaskStatus(c.id, 'Accepted'); toast(t('wf.taskAccepted'), 'success'); };
+  const handleStart = (c: Complaint) => { updateTaskStatus(c.id, 'In Progress'); toast(t('wf.taskStarted'), 'success'); };
 
   const handleResolve = () => {
-    if (!current || !beforePhoto || !afterPhoto) { toast('Please upload both before and after photos', 'warning'); return; }
+    if (!current || !beforePhoto || !afterPhoto) { toast(t('wf.errPhotos'), 'warning'); return; }
     resolveComplaint(current.id, beforePhoto, afterPhoto, note);
-    toast('Complaint resolved successfully!', 'success');
+    toast(t('wf.resolvedSuccess'), 'success');
     setResolveModal(false); setBeforePhoto(''); setAfterPhoto(''); setNote(''); setSelected(null);
   };
 
@@ -97,7 +108,7 @@ function MyTasks() {
       {myTasks.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
           <ClipboardList className="w-10 h-10 text-gray-300 mx-auto" />
-          <p className="text-gray-400 mt-3">No active tasks assigned</p>
+          <p className="text-gray-400 mt-3">{t('wf.noActiveAssigned')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -118,19 +129,18 @@ function MyTasks() {
               <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 mb-3">
                 <div className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {c.location}</div>
                 <div><PriorityBadge priority={c.priority} /></div>
-                <div className="col-span-2">Category: <span className="font-medium text-gray-700">{c.category}</span></div>
               </div>
 
               <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
                 {c.taskStatus === 'Assigned' && (
-                  <button onClick={() => handleAccept(c)} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">Accept Task</button>
+                  <button onClick={() => handleAccept(c)} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">{t('wf.acceptTask')}</button>
                 )}
                 {(c.taskStatus === 'Accepted' || c.taskStatus === 'Assigned') && (
-                  <button onClick={() => handleStart(c)} className="px-3 py-1.5 bg-violet-600 text-white rounded-lg text-xs font-medium hover:bg-violet-700 flex items-center gap-1"><Play className="w-3 h-3" /> Start</button>
+                  <button onClick={() => handleStart(c)} className="px-3 py-1.5 bg-violet-600 text-white rounded-lg text-xs font-medium hover:bg-violet-700 flex items-center gap-1"><Play className="w-3 h-3" /> {t('wf.start')}</button>
                 )}
-                <button onClick={() => setSelected(c)} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-200 flex items-center gap-1"><MapPin className="w-3 h-3" /> View Location</button>
+                <button onClick={() => setSelected(c)} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-200 flex items-center gap-1"><MapPin className="w-3 h-3" /> {t('wf.viewLocation')}</button>
                 {c.taskStatus === 'In Progress' && (
-                  <button onClick={() => { setSelected(c); setResolveModal(true); }} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Mark Resolved</button>
+                  <button onClick={() => { setSelected(c); setResolveModal(true); }} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {t('wf.markResolved')}</button>
                 )}
               </div>
             </div>
@@ -139,7 +149,7 @@ function MyTasks() {
       )}
 
       {/* Location / Details Modal */}
-      <Modal open={!!selected && !resolveModal} onClose={() => setSelected(null)} title={`Task Details - ${current?.id || ''}`} size="md">
+      <Modal open={!!selected && !resolveModal} onClose={() => setSelected(null)} title={t('wf.taskDetails', { id: current?.id || '' })} size="md">
         {current && (
           <div className="space-y-4">
             <div>
@@ -147,13 +157,13 @@ function MyTasks() {
               <p className="text-sm text-gray-600 mt-1">{current.description}</p>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><p className="text-xs text-gray-400">Location</p><p className="font-medium">{current.location}</p></div>
-              <div><p className="text-xs text-gray-400">Category</p><p className="font-medium">{current.category}</p></div>
-              <div><p className="text-xs text-gray-400">Priority</p><PriorityBadge priority={current.priority} /></div>
-              <div><p className="text-xs text-gray-400">Citizen</p><p className="font-medium">{current.citizenName}</p></div>
+              <div><p className="text-xs text-gray-400">{t('track.department')}</p><p className="font-medium">{current.location}</p></div>
+              <div><p className="text-xs text-gray-400">{t('detail.category')}</p><p className="font-medium">{current.category}</p></div>
+              <div><p className="text-xs text-gray-400">{t('detail.priority')}</p><PriorityBadge priority={current.priority} /></div>
+              <div><p className="text-xs text-gray-400">{t('myComplaints.table.citizen')}</p><p className="font-medium">{current.citizenName}</p></div>
             </div>
             <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-400 mb-1">Simulated Location</p>
+              <p className="text-xs text-gray-400 mb-1">{t('wf.simulatedLoc')}</p>
               <div className="h-32 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg flex items-center justify-center border border-gray-200">
                 <div className="text-center">
                   <MapPin className="w-6 h-6 text-blue-500 mx-auto" />
@@ -164,7 +174,7 @@ function MyTasks() {
             </div>
             {current.taskStatus === 'In Progress' && (
               <button onClick={() => setResolveModal(true)} className="w-full px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4" /> Mark Resolved
+                <CheckCircle2 className="w-4 h-4" /> {t('wf.markResolved')}
               </button>
             )}
           </div>
@@ -172,38 +182,38 @@ function MyTasks() {
       </Modal>
 
       {/* Resolve Modal */}
-      <Modal open={resolveModal} onClose={() => setResolveModal(false)} title="Resolve Complaint" size="md">
+      <Modal open={resolveModal} onClose={() => setResolveModal(false)} title={t('wf.resolveTitle')} size="md">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-gray-700">Upload Before Photo</label>
+              <label className="text-sm font-medium text-gray-700">{t('wf.uploadBefore')}</label>
               <div className="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-emerald-400">
                 <Camera className="w-6 h-6 text-gray-400 mx-auto" />
                 <input type="file" accept="image/*" className="hidden" id="before-upload"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) setBeforePhoto(URL.createObjectURL(f)); }} />
-                <label htmlFor="before-upload" className="text-xs text-emerald-600 cursor-pointer mt-1 block">{beforePhoto ? 'Photo selected' : 'Click to upload'}</label>
+                <label htmlFor="before-upload" className="text-xs text-emerald-600 cursor-pointer mt-1 block">{beforePhoto ? t('wf.photoSelected') : t('report.clickUpload')}</label>
               </div>
               {beforePhoto && <img src={beforePhoto} alt="Before" className="mt-2 rounded-lg h-24 w-full object-cover" />}
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700">Upload After Photo</label>
+              <label className="text-sm font-medium text-gray-700">{t('wf.uploadAfter')}</label>
               <div className="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-emerald-400">
                 <Camera className="w-6 h-6 text-gray-400 mx-auto" />
                 <input type="file" accept="image/*" className="hidden" id="after-upload"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) setAfterPhoto(URL.createObjectURL(f)); }} />
-                <label htmlFor="after-upload" className="text-xs text-emerald-600 cursor-pointer mt-1 block">{afterPhoto ? 'Photo selected' : 'Click to upload'}</label>
+                <label htmlFor="after-upload" className="text-xs text-emerald-600 cursor-pointer mt-1 block">{afterPhoto ? t('wf.photoSelected') : t('report.clickUpload')}</label>
               </div>
               {afterPhoto && <img src={afterPhoto} alt="After" className="mt-2 rounded-lg h-24 w-full object-cover" />}
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700">Resolution Note</label>
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder="Describe what was done..."
+            <label className="text-sm font-medium text-gray-700">{t('wf.resolutionNote')}</label>
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder={t('wf.resolutionPlaceholder')}
               className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 resize-none" />
           </div>
           <button onClick={handleResolve} disabled={!beforePhoto || !afterPhoto}
             className="w-full px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4" /> Confirm Resolution
+            <CheckCircle2 className="w-4 h-4" /> {t('wf.confirmResolution')}
           </button>
         </div>
       </Modal>
@@ -212,6 +222,7 @@ function MyTasks() {
 }
 
 function TaskHistory() {
+  const { t } = useI18n();
   const { complaints, currentUser } = useStore();
   const completed = complaints.filter((c) => c.assignedWorkforceId === currentUser?.id && c.taskStatus === 'Resolved');
 
@@ -220,14 +231,14 @@ function TaskHistory() {
       {completed.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
           <History className="w-10 h-10 text-gray-300 mx-auto" />
-          <p className="text-gray-400 mt-3">No completed tasks yet</p>
+          <p className="text-gray-400 mt-3">{t('wf.noCompletedTasks')}</p>
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>{['ID', 'Title', 'Category', 'Location', 'Date', 'Resolution'].map((h) => (
+                <tr>{[t('myComplaints.table.id'), t('myComplaints.table.title'), t('myComplaints.table.category'), t('myComplaints.table.location'), t('myComplaints.table.date'), t('wf.table.resolution')].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">{h}</th>
                 ))}</tr>
               </thead>
@@ -252,6 +263,7 @@ function TaskHistory() {
 }
 
 function ProfileView() {
+  const { t } = useI18n();
   const { currentUser, complaints, workforce } = useStore();
   if (!currentUser) return null;
   const wf = workforce.find((w) => w.id === currentUser.id);
@@ -266,20 +278,20 @@ function ProfileView() {
           </div>
           <div>
             <h3 className="text-xl font-bold text-gray-900">{currentUser.name}</h3>
-            <p className="text-sm text-gray-500">Field Workforce · {wf?.department}</p>
+            <p className="text-sm text-gray-500">{t('wf.fieldWorkforce')} · {wf?.department}</p>
           </div>
         </div>
         <div className="mt-6 grid grid-cols-2 gap-4">
-          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">Email</p><p className="text-sm font-medium">{currentUser.email}</p></div>
-          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">Phone</p><p className="text-sm font-medium">{currentUser.phone}</p></div>
-          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">Department</p><p className="text-sm font-medium">{wf?.department}</p></div>
-          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">Status</p><p className="text-sm font-medium">{wf?.availability}</p></div>
+          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">{t('profile.email')}</p><p className="text-sm font-medium">{currentUser.email}</p></div>
+          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">{t('profile.phone')}</p><p className="text-sm font-medium">{currentUser.phone}</p></div>
+          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">{t('profile.department')}</p><p className="text-sm font-medium">{wf?.department}</p></div>
+          <div className="p-3 bg-gray-50 rounded-lg"><p className="text-xs text-gray-400">{t('profile.status')}</p><p className="text-sm font-medium">{wf?.availability ? t(`availability.${wf.availability}`) : ''}</p></div>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Total Tasks" value={myTasks.length} icon={<ClipboardList className="w-5 h-5" />} color="blue" />
-        <StatCard label="Resolved" value={wf?.completedTasks || 0} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
-        <StatCard label="Active" value={wf?.activeTasks || 0} icon={<Clock className="w-5 h-5" />} color="amber" />
+        <StatCard label={t('profile.totalTasks')} value={myTasks.length} icon={<ClipboardList className="w-5 h-5" />} color="blue" />
+        <StatCard label={t('auth_dash.resolved')} value={wf?.completedTasks || 0} icon={<CheckCircle2 className="w-5 h-5" />} color="emerald" />
+        <StatCard label={t('profile.active')} value={wf?.activeTasks || 0} icon={<Clock className="w-5 h-5" />} color="amber" />
       </div>
     </div>
   );
