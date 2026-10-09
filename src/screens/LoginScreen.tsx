@@ -4,8 +4,8 @@ import {
   LogIn, AlertCircle, CheckCircle2, Phone,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
+import { useI18n } from '@/lib/i18n';
 import { validateEmail, validateMobile } from '@/lib/auth';
-import type { Role } from '@/lib/types';
 
 type Mode = 'signin' | 'signup';
 
@@ -19,13 +19,12 @@ interface FieldErrors {
 
 export default function LoginScreen() {
   const { signIn, signUp, toast } = useStore();
+  const { t } = useI18n();
   const [mode, setMode] = useState<Mode>('signin');
 
-  // Sign In fields
   const [siEmail, setSiEmail] = useState('');
   const [siPassword, setSiPassword] = useState('');
 
-  // Sign Up fields
   const [suName, setSuName] = useState('');
   const [suMobile, setSuMobile] = useState('');
   const [suEmail, setSuEmail] = useState('');
@@ -47,7 +46,7 @@ export default function LoginScreen() {
     e.preventDefault();
     setError('');
     if (!siEmail.trim() || !siPassword) {
-      setError('Please enter your email and password');
+      setError(t('auth.errEmailPass'));
       return;
     }
     const result = await signIn(siEmail.trim(), siPassword);
@@ -55,35 +54,35 @@ export default function LoginScreen() {
       setError(result.error);
       return;
     }
-    toast(`Signed in as ${result.user.name}. Choose your role to continue.`, 'success');
+    toast(t('auth.signedInAs', { name: result.user.name }), 'success');
   };
 
   const validateSignUp = (): boolean => {
     const errs: FieldErrors = {};
     if (!suName.trim()) {
-      errs.name = 'Full name is required';
+      errs.name = t('auth.errNameReq');
     } else if (suName.trim().length < 2) {
-      errs.name = 'Name must be at least 2 characters';
+      errs.name = t('auth.errNameMin');
     }
     if (!suMobile.trim()) {
-      errs.mobile = 'Mobile number is required';
+      errs.mobile = t('auth.errMobileReq');
     } else if (!validateMobile(suMobile.trim())) {
-      errs.mobile = 'Enter a valid 10-digit Indian mobile number (starts with 6-9)';
+      errs.mobile = t('auth.errMobileInvalid');
     }
     if (!suEmail.trim()) {
-      errs.email = 'Email is required';
+      errs.email = t('auth.errEmailReq');
     } else if (!validateEmail(suEmail.trim())) {
-      errs.email = 'Enter a valid email address';
+      errs.email = t('auth.errEmailInvalid');
     }
     if (!suPassword) {
-      errs.password = 'Password is required';
+      errs.password = t('auth.errPassReq');
     } else if (suPassword.length < 8) {
-      errs.password = 'Password must be at least 8 characters';
+      errs.password = t('auth.errPassMin');
     }
     if (!suConfirm) {
-      errs.confirm = 'Please confirm your password';
+      errs.confirm = t('auth.errConfirmReq');
     } else if (suPassword !== suConfirm) {
-      errs.confirm = 'Passwords do not match';
+      errs.confirm = t('auth.errPassMatch');
     }
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
@@ -100,7 +99,7 @@ export default function LoginScreen() {
       setError(result.error);
       return;
     }
-    setSuccess('Account created successfully! Please sign in.');
+    setSuccess(t('auth.successCreate'));
     setSuName('');
     setSuMobile('');
     setSuEmail('');
@@ -108,7 +107,7 @@ export default function LoginScreen() {
     setSuConfirm('');
     setMode('signin');
     setSiEmail(suEmail.trim());
-    toast('Account created! Please sign in.', 'success');
+    toast(t('auth.accountCreated'), 'success');
   };
 
   return (
@@ -121,12 +120,12 @@ export default function LoginScreen() {
               <Building2 className="w-8 h-8 text-white" />
             </div>
             <div className="text-left">
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">JanSamvad</h1>
-              <p className="text-sm text-gray-500">AI-Powered Municipal Corporation Platform</p>
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{t('app.name')}</h1>
+              <p className="text-sm text-gray-500">{t('app.tagline')}</p>
             </div>
           </div>
           <p className="text-sm text-gray-500 max-w-sm mx-auto">
-            Connecting citizens, authorities, field workforce, and influencers for better civic services.
+            {t('app.desc')}
           </p>
         </div>
 
@@ -140,7 +139,7 @@ export default function LoginScreen() {
                 mode === 'signin' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              <LogIn className="w-4 h-4" /> Sign In
+              <LogIn className="w-4 h-4" /> {t('auth.signin')}
             </button>
             <button
               onClick={() => switchMode('signup')}
@@ -148,7 +147,7 @@ export default function LoginScreen() {
                 mode === 'signup' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              <UserPlus className="w-4 h-4" /> Sign Up
+              <UserPlus className="w-4 h-4" /> {t('auth.signup')}
             </button>
           </div>
 
@@ -170,27 +169,27 @@ export default function LoginScreen() {
           {mode === 'signin' && (
             <form onSubmit={handleSignIn} className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">Email</label>
+                <label className="text-sm font-medium text-gray-700">{t('auth.email')}</label>
                 <div className="mt-1 relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="email"
                     value={siEmail}
                     onChange={(e) => setSiEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">Password</label>
+                <label className="text-sm font-medium text-gray-700">{t('auth.password')}</label>
                 <div className="mt-1 relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="password"
                     value={siPassword}
                     onChange={(e) => setSiPassword(e.target.value)}
-                    placeholder="Your password"
+                    placeholder={t('auth.passwordPlaceholder')}
                     className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   />
                 </div>
@@ -199,12 +198,12 @@ export default function LoginScreen() {
                 type="submit"
                 className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-teal-600 text-white rounded-xl font-medium text-sm hover:opacity-90 flex items-center justify-center gap-2 transition-opacity"
               >
-                Sign In <ArrowRight className="w-4 h-4" />
+                {t('auth.signin')} <ArrowRight className="w-4 h-4" />
               </button>
               <p className="text-center text-sm text-gray-500">
-                Don't have an account?{' '}
+                {t('auth.noAccount')}{' '}
                 <button type="button" onClick={() => switchMode('signup')} className="text-blue-600 font-medium hover:underline">
-                  Sign up
+                  {t('auth.signup')}
                 </button>
               </p>
             </form>
@@ -213,16 +212,15 @@ export default function LoginScreen() {
           {/* Sign Up Form */}
           {mode === 'signup' && (
             <form onSubmit={handleSignUp} className="space-y-4">
-              {/* Full Name */}
               <div>
-                <label className="text-sm font-medium text-gray-700">Full Name *</label>
+                <label className="text-sm font-medium text-gray-700">{t('auth.fullNameReq')}</label>
                 <div className="mt-1 relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
                     value={suName}
                     onChange={(e) => setSuName(e.target.value)}
-                    placeholder="Your full name"
+                    placeholder={t('auth.namePlaceholder')}
                     className={`w-full pl-10 pr-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
                       fieldErrors.name ? 'border-rose-400' : 'border-gray-300'
                     }`}
@@ -231,16 +229,15 @@ export default function LoginScreen() {
                 {fieldErrors.name && <p className="mt-1 text-xs text-rose-600">{fieldErrors.name}</p>}
               </div>
 
-              {/* Mobile Number */}
               <div>
-                <label className="text-sm font-medium text-gray-700">Mobile Number *</label>
+                <label className="text-sm font-medium text-gray-700">{t('auth.mobileReq')}</label>
                 <div className="mt-1 relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="tel"
                     value={suMobile}
                     onChange={(e) => setSuMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    placeholder="10-digit mobile number"
+                    placeholder={t('auth.mobilePlaceholder')}
                     maxLength={10}
                     className={`w-full pl-10 pr-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
                       fieldErrors.mobile ? 'border-rose-400' : 'border-gray-300'
@@ -250,16 +247,15 @@ export default function LoginScreen() {
                 {fieldErrors.mobile && <p className="mt-1 text-xs text-rose-600">{fieldErrors.mobile}</p>}
               </div>
 
-              {/* Email */}
               <div>
-                <label className="text-sm font-medium text-gray-700">Email Address *</label>
+                <label className="text-sm font-medium text-gray-700">{t('auth.emailReq')}</label>
                 <div className="mt-1 relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="email"
                     value={suEmail}
                     onChange={(e) => setSuEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     className={`w-full pl-10 pr-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
                       fieldErrors.email ? 'border-rose-400' : 'border-gray-300'
                     }`}
@@ -268,16 +264,15 @@ export default function LoginScreen() {
                 {fieldErrors.email && <p className="mt-1 text-xs text-rose-600">{fieldErrors.email}</p>}
               </div>
 
-              {/* Password */}
               <div>
-                <label className="text-sm font-medium text-gray-700">Password *</label>
+                <label className="text-sm font-medium text-gray-700">{t('auth.passwordReq')}</label>
                 <div className="mt-1 relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="password"
                     value={suPassword}
                     onChange={(e) => setSuPassword(e.target.value)}
-                    placeholder="At least 8 characters"
+                    placeholder={t('auth.passwordMin')}
                     className={`w-full pl-10 pr-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
                       fieldErrors.password ? 'border-rose-400' : 'border-gray-300'
                     }`}
@@ -286,16 +281,15 @@ export default function LoginScreen() {
                 {fieldErrors.password && <p className="mt-1 text-xs text-rose-600">{fieldErrors.password}</p>}
               </div>
 
-              {/* Confirm Password */}
               <div>
-                <label className="text-sm font-medium text-gray-700">Confirm Password *</label>
+                <label className="text-sm font-medium text-gray-700">{t('auth.confirmReq')}</label>
                 <div className="mt-1 relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="password"
                     value={suConfirm}
                     onChange={(e) => setSuConfirm(e.target.value)}
-                    placeholder="Re-enter your password"
+                    placeholder={t('auth.confirmPlaceholder')}
                     className={`w-full pl-10 pr-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
                       fieldErrors.confirm ? 'border-rose-400' : 'border-gray-300'
                     }`}
@@ -308,12 +302,12 @@ export default function LoginScreen() {
                 type="submit"
                 className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-teal-600 text-white rounded-xl font-medium text-sm hover:opacity-90 flex items-center justify-center gap-2 transition-opacity"
               >
-                Sign Up <ArrowRight className="w-4 h-4" />
+                {t('auth.signup')} <ArrowRight className="w-4 h-4" />
               </button>
               <p className="text-center text-sm text-gray-500">
-                Already have an account?{' '}
+                {t('auth.haveAccount')}{' '}
                 <button type="button" onClick={() => switchMode('signin')} className="text-blue-600 font-medium hover:underline">
-                  Sign in
+                  {t('auth.signin')}
                 </button>
               </p>
             </form>
@@ -321,7 +315,7 @@ export default function LoginScreen() {
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-5">
-          JanSamvad uses simulated authentication for this prototype
+          {t('app.prototype')}
         </p>
       </div>
     </div>

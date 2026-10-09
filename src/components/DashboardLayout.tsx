@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { Bell, LogOut, Menu, X, Building2 } from 'lucide-react';
+import { Bell, LogOut, Menu, X, Building2, Globe } from 'lucide-react';
 import { useStore } from '@/lib/store';
+import { useI18n, type Lang } from '@/lib/i18n';
 import { timeAgo } from '@/lib/utils';
 import type { Role } from '@/lib/types';
 import AIChatbot from './AIChatbot';
@@ -29,13 +30,6 @@ const roleColors: Record<Role, string> = {
   influencer: 'from-fuchsia-600 to-fuchsia-700',
 };
 
-const roleLabels: Record<Role, string> = {
-  citizen: 'Citizen',
-  authority: 'Municipal Authority',
-  workforce: 'Field Workforce',
-  influencer: 'Influencer',
-};
-
 export default function DashboardLayout({
   navItems,
   activeNav,
@@ -46,11 +40,26 @@ export default function DashboardLayout({
   role,
 }: DashboardLayoutProps) {
   const { currentUser, logout, notifications, markNotificationRead, markAllNotificationsRead } = useStore();
+  const { t, lang, setLang } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
 
   const userNotifs = notifications.filter((n) => n.role === role && n.userId === currentUser?.id);
   const unreadCount = userNotifs.filter((n) => !n.read).length;
+
+  const roleLabels: Record<Role, string> = {
+    citizen: t('role.citizen'),
+    authority: t('role.authority'),
+    workforce: t('role.workforce'),
+    influencer: t('role.influencer'),
+  };
+
+  const langOptions: { code: Lang; label: string }[] = [
+    { code: 'en', label: t('lang.en') },
+    { code: 'mr', label: t('lang.mr') },
+    { code: 'hi', label: t('lang.hi') },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -66,8 +75,8 @@ export default function DashboardLayout({
               <Building2 className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-tight">JanSamvad</h1>
-              <p className="text-xs text-white/80">{roleLabels[role]} Portal</p>
+              <h1 className="font-bold text-lg leading-tight">{t('app.name')}</h1>
+              <p className="text-xs text-white/80">{t('role.portal', { label: roleLabels[role] })}</p>
             </div>
           </div>
         </div>
@@ -106,7 +115,7 @@ export default function DashboardLayout({
             onClick={logout}
             className="w-full flex items-center gap-2 px-3 py-2 mt-2 rounded-lg text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700"
           >
-            <LogOut className="w-4 h-4" /> Logout
+            <LogOut className="w-4 h-4" /> {t('layout.logout')}
           </button>
         </div>
       </aside>
@@ -127,52 +136,87 @@ export default function DashboardLayout({
             </div>
           </div>
 
-          <div className="relative">
-            <button
-              onClick={() => setNotifOpen(!notifOpen)}
-              className="relative p-2 rounded-lg hover:bg-gray-100 text-gray-600"
-            >
-              <Bell className="w-5 h-5" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {unreadCount}
+          <div className="flex items-center gap-2">
+            {/* Language Selector */}
+            <div className="relative">
+              <button
+                onClick={() => setLangOpen(!langOpen)}
+                className="flex items-center gap-1.5 p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+                title={t('lang.label')}
+              >
+                <Globe className="w-5 h-5" />
+                <span className="text-xs font-medium hidden sm:inline">
+                  {langOptions.find((o) => o.code === lang)?.label}
                 </span>
-              )}
-            </button>
-
-            {notifOpen && (
-              <>
-                <div className="fixed inset-0 z-30" onClick={() => setNotifOpen(false)} />
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-40 max-h-96 overflow-y-auto">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                    <p className="font-semibold text-sm text-gray-900">Notifications</p>
-                    {unreadCount > 0 && (
+              </button>
+              {langOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setLangOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-36 bg-white rounded-xl shadow-xl border border-gray-200 z-40 py-1">
+                    {langOptions.map((opt) => (
                       <button
-                        onClick={() => markAllNotificationsRead(role, currentUser?.id || '')}
-                        className="text-xs text-blue-600 hover:underline"
+                        key={opt.code}
+                        onClick={() => { setLang(opt.code); setLangOpen(false); }}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
+                          lang === opt.code ? 'text-blue-600 font-medium' : 'text-gray-700'
+                        }`}
                       >
-                        Mark all read
+                        {opt.label}
                       </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Notifications */}
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen(!notifOpen)}
+                className="relative p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notifOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setNotifOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-40 max-h-96 overflow-y-auto">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                      <p className="font-semibold text-sm text-gray-900">{t('layout.notifications')}</p>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={() => markAllNotificationsRead(role, currentUser?.id || '')}
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          {t('layout.markAllRead')}
+                        </button>
+                      )}
+                    </div>
+                    {userNotifs.length === 0 ? (
+                      <p className="px-4 py-6 text-sm text-gray-400 text-center">{t('layout.noNotifications')}</p>
+                    ) : (
+                      userNotifs.slice(0, 15).map((n) => (
+                        <button
+                          key={n.id}
+                          onClick={() => markNotificationRead(n.id)}
+                          className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 ${!n.read ? 'bg-blue-50/40' : ''}`}
+                        >
+                          <p className="text-sm font-medium text-gray-900">{n.title}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
+                          <p className="text-[10px] text-gray-400 mt-1">{timeAgo(n.timestamp)}</p>
+                        </button>
+                      ))
                     )}
                   </div>
-                  {userNotifs.length === 0 ? (
-                    <p className="px-4 py-6 text-sm text-gray-400 text-center">No notifications</p>
-                  ) : (
-                    userNotifs.slice(0, 15).map((n) => (
-                      <button
-                        key={n.id}
-                        onClick={() => markNotificationRead(n.id)}
-                        className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 ${!n.read ? 'bg-blue-50/40' : ''}`}
-                      >
-                        <p className="text-sm font-medium text-gray-900">{n.title}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
-                        <p className="text-[10px] text-gray-400 mt-1">{timeAgo(n.timestamp)}</p>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </header>
 

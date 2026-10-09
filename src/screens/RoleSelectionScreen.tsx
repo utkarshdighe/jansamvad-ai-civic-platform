@@ -1,56 +1,58 @@
 import { User, Shield, HardHat, Megaphone, Building2, ArrowRight } from 'lucide-react';
 import { useStore } from '@/lib/store';
+import { useI18n } from '@/lib/i18n';
 import type { Role } from '@/lib/types';
-
-const roleCards: {
-  role: Role;
-  title: string;
-  description: string;
-  icon: typeof User;
-  gradient: string;
-  iconBg: string;
-  ring: string;
-}[] = [
-  {
-    role: 'citizen',
-    title: 'Citizen',
-    description: 'Access citizen complaint reporting, my complaints, tracking, rewards and notifications.',
-    icon: User,
-    gradient: 'from-blue-600 to-blue-700',
-    iconBg: 'bg-blue-50 text-blue-600',
-    ring: 'hover:ring-blue-400',
-  },
-  {
-    role: 'authority',
-    title: 'Municipal Authority',
-    description: 'Access municipal complaint management, verification, assignment and administration.',
-    icon: Shield,
-    gradient: 'from-teal-600 to-teal-700',
-    iconBg: 'bg-teal-50 text-teal-600',
-    ring: 'hover:ring-teal-400',
-  },
-  {
-    role: 'workforce',
-    title: 'Field Workforce',
-    description: 'Access assigned complaints, field work, status updates and resolution.',
-    icon: HardHat,
-    gradient: 'from-orange-500 to-orange-600',
-    iconBg: 'bg-orange-50 text-orange-600',
-    ring: 'hover:ring-orange-400',
-  },
-  {
-    role: 'influencer',
-    title: 'Influencer / Reporter',
-    description: 'Access civic reports, complaint visibility and community engagement.',
-    icon: Megaphone,
-    gradient: 'from-fuchsia-600 to-fuchsia-700',
-    iconBg: 'bg-fuchsia-50 text-fuchsia-600',
-    ring: 'hover:ring-fuchsia-400',
-  },
-];
 
 export default function RoleSelectionScreen() {
   const { pendingUser, selectRole, logout } = useStore();
+  const { t } = useI18n();
+
+  const roleCards: {
+    role: Role;
+    title: string;
+    description: string;
+    icon: typeof User;
+    gradient: string;
+    iconBg: string;
+    ring: string;
+  }[] = [
+    {
+      role: 'citizen',
+      title: t('role.citizen'),
+      description: t('role.citizenDesc'),
+      icon: User,
+      gradient: 'from-blue-600 to-blue-700',
+      iconBg: 'bg-blue-50 text-blue-600',
+      ring: 'hover:ring-blue-400',
+    },
+    {
+      role: 'authority',
+      title: t('role.authority'),
+      description: t('role.authorityDesc'),
+      icon: Shield,
+      gradient: 'from-teal-600 to-teal-700',
+      iconBg: 'bg-teal-50 text-teal-600',
+      ring: 'hover:ring-teal-400',
+    },
+    {
+      role: 'workforce',
+      title: t('role.workforce'),
+      description: t('role.workforceDesc'),
+      icon: HardHat,
+      gradient: 'from-orange-500 to-orange-600',
+      iconBg: 'bg-orange-50 text-orange-600',
+      ring: 'hover:ring-orange-400',
+    },
+    {
+      role: 'influencer',
+      title: t('role.influencer'),
+      description: t('role.influencerDesc'),
+      icon: Megaphone,
+      gradient: 'from-fuchsia-600 to-fuchsia-700',
+      iconBg: 'bg-fuchsia-50 text-fuchsia-600',
+      ring: 'hover:ring-fuchsia-400',
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-teal-50/30 flex items-center justify-center p-4">
@@ -62,17 +64,17 @@ export default function RoleSelectionScreen() {
               <Building2 className="w-8 h-8 text-white" />
             </div>
             <div className="text-left">
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">JanSamvad</h1>
-              <p className="text-sm text-gray-500">AI-Powered Municipal Corporation Platform</p>
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{t('app.name')}</h1>
+              <p className="text-sm text-gray-500">{t('app.tagline')}</p>
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mt-4">Choose Your Role</h2>
-          <p className="text-sm text-gray-500 mt-1">Select the portal you want to access</p>
+          <h2 className="text-2xl font-bold text-gray-900 mt-4">{t('role.title')}</h2>
+          <p className="text-sm text-gray-500 mt-1">{t('role.subtitle')}</p>
           {pendingUser && (
             <p className="text-xs text-gray-400 mt-2">
-              Signed in as <span className="font-medium text-gray-600">{pendingUser.name}</span>
+              {t('role.signedInAs')} <span className="font-medium text-gray-600">{pendingUser.name}</span>
               {' · '}
-              <button onClick={logout} className="text-blue-600 hover:underline">Sign out</button>
+              <button onClick={logout} className="text-blue-600 hover:underline">{t('role.signOut')}</button>
             </p>
           )}
         </div>
@@ -105,7 +107,7 @@ export default function RoleSelectionScreen() {
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">
-          JanSamvad uses simulated authentication for this prototype
+          {t('app.prototype')}
         </p>
       </div>
     </div>
